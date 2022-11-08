@@ -1,0 +1,12 @@
+# Language: None, Cpp, Java, JavaScript, ObjC, Proto, TableGen, TextProto
+Language: Cpp
+BasedOnStyle: Google
+
+IndentWidth: 4
+
+ColumnLimit: 120
+
+BreakBeforeBraces: Custom
+
+BraceWrapping:
+    AfterFunction: true
