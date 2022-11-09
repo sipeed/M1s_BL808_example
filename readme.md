@@ -60,6 +60,8 @@
 
     - Use the type-c usb cable to connect from the PC side to the UART port of the board
 
+    - Keep the `BOOT` button pressed and click `RST` button, then release the `BOOT` button
+
     - Startup `BLDevCube Tools` and choose `BL808` chip
 
     - Configure the tool according to the label below, finally click `Create & Download` will start to download firmware
@@ -74,9 +76,22 @@
 
     - Configure the tool according to the label below, finally click `Create & Download` will start to download firmware
 
-        ![image-20221018233819623](assets/image-20221018233819623.png)
+        ![image-20221018233819623](assets/
+        image-20221018233819623.png)
 
-4. About partition table files
+4. Download e907 firmware
+
+    - Use the type-c usb cable to connect from the PC side to the UART port of the board
+
+    - Keep the `BOOT` button pressed and click `RST` button, then release the `BOOT` button
+
+    - Startup `BLDevCube Tools` and choose `BL808` chip
+
+    - Configure the tool according to the label below, finally click `Create & Download` will start to download firmware
+
+        ![image-20221109200656](assets/image-20221109200656.jpg)
+
+5. About partition table files
 
     The partition table of bl808 is written in toml file format. You can specify the flash size used by the firmware by modifying the partition table.
 
