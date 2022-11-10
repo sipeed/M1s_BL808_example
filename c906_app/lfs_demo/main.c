@@ -55,5 +55,5 @@ void main()
     aos_close(fd);
 
     // print the boot count
-    printf("boot_count: %d\n", boot_count);
+    printf("boot_count: %d\r\n", boot_count);
 }
