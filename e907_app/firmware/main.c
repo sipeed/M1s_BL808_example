@@ -486,7 +486,7 @@ static void event_cb_cli_raw_event(input_event_t *event, void *private_data)
 {
     switch (event->code) {
         case CODE_CLI_DATA_RAW: {
-            printf("CLI RAW Data, %s\r\n", (char *)event->value);
+            // printf("CLI RAW Data, %s\r\n", (char *)event->value);
             aos_cli_input_direct((char *)event->value, strlen((char *)event->value));
             vPortFree((char *)event->value);
         } break;

@@ -21,7 +21,7 @@ COMPONENTS_NETWORK += wifi wifi_manager blcrypto_suite wpa_supplicant wifi_hosal
 COMPONENTS_NETWORK += bl606p_phyrf
 COMPONENTS_NETWORK += bl_os_adapter
 
-INCLUDE_COMPONENTS += freertos_e907 hal_drv vfs yloop cli utils newlibc blmtd easyflash4 boot_cpu0 freertos_e907_helper coredump
+INCLUDE_COMPONENTS += freertos_e907 hal_drv vfs yloop cli utils newlibc blmtd easyflash4 freertos_e907_helper coredump
 INCLUDE_COMPONENTS += startup_bl808
 INCLUDE_COMPONENTS += bl808_e907_std
 INCLUDE_COMPONENTS += hosal blfdt bl808_audio
