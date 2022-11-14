@@ -67,6 +67,10 @@
     - Configure the tool according to the label below, finally click `Create & Download` will start to download firmware
 
         ![image-20221018233328391](assets/image-20221018233328391.png)
+        
+        **Tips:**
+        
+        > If you have downloaded the e907 firmware and have an extra USB port on your PC, you can update the c906 firmware via USB. You just need connect the USB to the OTG port, press and hold the left and right buttons before the board is reset, then drag your firmware to the ejected disk and just wait for the new firmware to boot.
 
 3. Download bl702 firmware
 
@@ -76,8 +80,7 @@
 
     - Configure the tool according to the label below, finally click `Create & Download` will start to download firmware
 
-        ![image-20221018233819623](assets/
-        image-20221018233819623.png)
+        ![image-20221018233819623](assets/image-20221018233819623.png)
 
 4. Download e907 firmware
 
