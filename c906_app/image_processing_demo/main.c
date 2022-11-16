@@ -1,12 +1,11 @@
+#include <fcntl.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 /* FreeRTOS */
 #include <FreeRTOS.h>
 #include <task.h>
-
-/* fs */
-#include <bl_romfs.h>
 
 /* lcd */
 #include <lcd.h>
@@ -53,7 +52,6 @@ static inline void draw_string(rgb565_frame_t *frame, uint16_t x, uint16_t y, co
 
 void main()
 {
-    romfs_register();
     st7789v_spi_init();
     st7789v_spi_clear(0);
 
@@ -65,7 +63,7 @@ void main()
         cfg.smtCtrl = 1;
         cfg.gpioFun = GPIO_FUN_GPIO;
         cfg.outputMode = 0;
-        cfg.pullType = GPIO_PULL_NONE;
+        cfg.pullType = GPIO_PULL_UP;
 
         cfg.gpioPin = PIN_BTN1;
         cfg.gpioMode = GPIO_MODE_INPUT;
