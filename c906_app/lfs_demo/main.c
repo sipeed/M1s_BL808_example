@@ -56,4 +56,6 @@ void main()
 
     // print the boot count
     printf("boot_count: %d\r\n", boot_count);
+
+    lfs_unregister();
 }
