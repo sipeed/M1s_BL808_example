@@ -28,7 +28,9 @@ INCLUDE_COMPONENTS += hosal blfdt bl808_audio
 INCLUDE_COMPONENTS += romfs usb_stack
 INCLUDE_COMPONENTS += fatfs sdh_helper
 
-COMPONENTS_SIPEEED := m1s_boot_d0
+COMPONENTS_SIPEEED := 
+COMPONENTS_SIPEEED += m1s_boot_d0
+COMPONENTS_SIPEEED += lfs m1s_lfs_e907
 COMPONENTS_SIPEEED += m1s_e907_xram m1s_common_xram m1s_msc
 INCLUDE_COMPONENTS += $(COMPONENTS_SIPEEED)
 

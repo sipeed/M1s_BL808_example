@@ -114,7 +114,8 @@ void vApplicationIdleHook(void)
     /*empty*/
 }
 
-void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize)
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer,
+                                   uint32_t *pulIdleTaskStackSize)
 {
     /* If the buffers to be provided to the Idle task are declared inside this
     function then they must be declared static - otherwise they will be allocated on
@@ -138,7 +139,8 @@ void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackTyp
 /* configSUPPORT_STATIC_ALLOCATION and configUSE_TIMERS are both set to 1, so the
 application must provide an implementation of vApplicationGetTimerTaskMemory()
 to provide the memory that is used by the Timer service task. */
-void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer, uint32_t *pulTimerTaskStackSize)
+void vApplicationGetTimerTaskMemory(StaticTask_t **ppxTimerTaskTCBBuffer, StackType_t **ppxTimerTaskStackBuffer,
+                                    uint32_t *pulTimerTaskStackSize)
 {
     /* If the buffers to be provided to the Timer task are declared inside this
     function then they must be declared static - otherwise they will be allocated on
@@ -402,7 +404,8 @@ static void event_cb_wifi_event(input_event_t *event, void *private_data)
             printf("[APP] [EVT] SCAN On Join %lld\r\n", aos_now_ms());
         } break;
         case CODE_WIFI_ON_DISCONNECT: {
-            printf("[APP] [EVT] disconnect %lld, Reason: %s\r\n", aos_now_ms(), wifi_mgmr_status_code_str(event->value));
+            printf("[APP] [EVT] disconnect %lld, Reason: %s\r\n", aos_now_ms(),
+                   wifi_mgmr_status_code_str(event->value));
         } break;
         case CODE_WIFI_ON_CONNECTING: {
             printf("[APP] [EVT] Connecting %lld\r\n", aos_now_ms());
@@ -440,7 +443,8 @@ static void event_cb_wifi_event(input_event_t *event, void *private_data)
             hal_reboot();  // one way of handling emergency is reboot. Maybe we should also consider solutions
         } break;
         case CODE_WIFI_ON_PROV_SSID: {
-            printf("[APP] [EVT] [PROV] [SSID] %lld: %s\r\n", aos_now_ms(), event->value ? (const char *)event->value : "UNKNOWN");
+            printf("[APP] [EVT] [PROV] [SSID] %lld: %s\r\n", aos_now_ms(),
+                   event->value ? (const char *)event->value : "UNKNOWN");
             if (ssid) {
                 vPortFree(ssid);
                 ssid = NULL;
@@ -448,13 +452,15 @@ static void event_cb_wifi_event(input_event_t *event, void *private_data)
             ssid = (char *)event->value;
         } break;
         case CODE_WIFI_ON_PROV_BSSID: {
-            printf("[APP] [EVT] [PROV] [BSSID] %lld: %s\r\n", aos_now_ms(), event->value ? (const char *)event->value : "UNKNOWN");
+            printf("[APP] [EVT] [PROV] [BSSID] %lld: %s\r\n", aos_now_ms(),
+                   event->value ? (const char *)event->value : "UNKNOWN");
             if (event->value) {
                 vPortFree((void *)event->value);
             }
         } break;
         case CODE_WIFI_ON_PROV_PASSWD: {
-            printf("[APP] [EVT] [PROV] [PASSWD] %lld: %s\r\n", aos_now_ms(), event->value ? (const char *)event->value : "UNKNOWN");
+            printf("[APP] [EVT] [PROV] [PASSWD] %lld: %s\r\n", aos_now_ms(),
+                   event->value ? (const char *)event->value : "UNKNOWN");
             if (password) {
                 vPortFree(password);
                 password = NULL;
@@ -528,7 +534,11 @@ static void aos_loop_proc(void *pvParameters)
 
     aos_loop_init();
 
-    romfs_register();
+    // romfs_register();
+    // lfs_register();
+    hal_sd_bus_4bits_enable();
+    fatfs_register();
+    helper_sdh_cli_init();
 #ifdef FEATURE_ENABLE_EASYFLASH
     easyflash_init();
 #endif
@@ -580,7 +590,10 @@ static void cmd_stack_wifi(char *buf, int len, int argc, char **argv)
     aos_post_event(EV_WIFI, CODE_WIFI_ON_INIT_DONE, 0);
 }
 
-static void cmd_stack_mgmr(char *buf, int len, int argc, char **argv) { aos_post_event(EV_WIFI, CODE_WIFI_ON_INIT_DONE, 0); }
+static void cmd_stack_mgmr(char *buf, int len, int argc, char **argv)
+{
+    aos_post_event(EV_WIFI, CODE_WIFI_ON_INIT_DONE, 0);
+}
 
 static void cmd_wifi(char *buf, int len, int argc, char **argv)
 {
@@ -620,7 +633,8 @@ void bfl_main()
     puts("[OS] Starting aos_loop_proc task...\r\n");
     system_thread_init();
 
-    xTaskCreateStatic(aos_loop_proc, TASK_AOS_TASKNAME, TASK_AOS_STACKSIZE, NULL, TASK_AOS_PRIORITY, aos_loop_proc_stack, &aos_loop_proc_task);
+    xTaskCreateStatic(aos_loop_proc, TASK_AOS_TASKNAME, TASK_AOS_STACKSIZE, NULL, TASK_AOS_PRIORITY,
+                      aos_loop_proc_stack, &aos_loop_proc_task);
 
     puts("[OS] Start e907 xram handle...\r\n");
     m1s_e907_xram_init();
