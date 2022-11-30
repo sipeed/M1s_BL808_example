@@ -6,10 +6,12 @@
 #include <FreeRTOS.h>
 #include <task.h>
 
+/* fatfs */
+#include <fatfs.h>
+
 /* bl808 c906 std driver */
 #include <bl808_glb.h>
 
-#include "bl808_glb.h"
 #include "lcd.h"
 
 // "a", "b", "select", "start", "right", "left", "up", "down", "r", "l",
@@ -65,14 +67,14 @@ void emuMainLoop();
 
 int main()
 {
-    /*
-      You need to download the gba file to address 0x800000, the program will load the gba into the memory, If the gba
-      file is incorrect, the program may fail to execute, see the emuMainLoop() function for details
-    */
-    bl808_key_init();
+    fatfs_register();
     st7789v_spi_init();
     st7789v_spi_set_dir(1, 0);
     st7789v_spi_clear(0x0);
-    emuMainLoop();
+
+    bl808_key_init();
+    extern int cmd_c906_gba_cli_init(void);
+    cmd_c906_gba_cli_init();
+
     return 0;
 }
