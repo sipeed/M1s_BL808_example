@@ -115,7 +115,7 @@
 
 ## BEFORE DEPLOY TO BL808 NPU
 
-1. You should check the value output by SIM in `blai_toolchain` with your tflite model's output. Use the same input image: `a.bmp`(yours).
+1. You should check the output of the 'blai_toolchain' simulator against the results of the tflite runtime. Use the same input image: `a.bmp`(yours).
 
 2. SIM outputs  in  `<username>/BLAI_output/output_layer_data.h`, details below:
    
