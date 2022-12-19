@@ -26,6 +26,7 @@ INCLUDE_COMPONENTS += dsp2 bl_mm venc_device venc_framework dsp2_cli_demo mjpeg_
 
 COMPONENTS_SIPEEED :=
 COMPONENTS_SIPEEED += m1s_start
+COMPONENTS_SIPEEED += m1s_model_runner
 COMPONENTS_SIPEEED += m1s_tools
 COMPONENTS_SIPEEED += lfs m1s_lfs_c906
 COMPONENTS_SIPEEED += m1s_common_xram m1s_c906_xram
