@@ -20,7 +20,7 @@
 #include "TinyObj.h"
 #include "PikaMain.h"
 #include "PikaStdLib_SysObj.h"
-#include "BLIOT.h"
+#include "PikaStdDevice.h"
 #include "PikaStdLib.h"
 #include "pika_lvgl.h"
 #include "PikaStdData.h"
@@ -228,7 +228,7 @@ class_inhert(PikaMain, PikaStdLib_SysObj);
 
 PikaObj *New_PikaMain(Args *args){
     PikaObj *self = New_PikaStdLib_SysObj(args);
-    obj_newObj(self, "BLIOT", "BLIOT", New_BLIOT);
+    obj_newObj(self, "PikaStdDevice", "PikaStdDevice", New_PikaStdDevice);
     obj_newObj(self, "PikaStdLib", "PikaStdLib", New_PikaStdLib);
     obj_newObj(self, "pika_lvgl", "pika_lvgl", New_pika_lvgl);
     obj_setClass(self, PikaMain);

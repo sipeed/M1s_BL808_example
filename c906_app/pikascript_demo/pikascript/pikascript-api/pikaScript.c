@@ -30,7 +30,7 @@ PikaObj *pikaScriptInit(void){
     obj_run(pikaMain,
             "from PikaStdLib import MemChecker as mem\n"
             "import pika_lvgl as lv\n"
-            "import BLIOT\n"
+            "import PikaStdDevice as std\n"
             "print('mem used max')\n"
             "mem.max()\n"
             "\n");
