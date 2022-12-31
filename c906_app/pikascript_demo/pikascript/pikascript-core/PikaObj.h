@@ -96,9 +96,22 @@ struct RangeData {
 #define OBJ_FLAG_RUN_AS 0x16
 #define OBJ_FLAG_GLOBALS 0x32
 
-#define obj_getFlag(__self, __flag) (((__self)->flag & (__flag)) == (__flag))
-#define obj_setFlag(__self, __flag) ((__self)->flag |= (__flag))
-#define obj_clearFlag(__self, __flag) ((__self)->flag &= ~(__flag))
+#define KEY_UP 0x41
+#define KEY_DOWN 0x42
+#define KEY_RIGHT 0x43
+#define KEY_LEFT 0x44
+
+static inline uint8_t obj_getFlag(PikaObj* self, uint8_t flag) {
+    return (self->flag & flag) == flag;
+}
+
+static inline void obj_setFlag(PikaObj* self, uint8_t flag) {
+    self->flag |= flag;
+}
+
+static inline void obj_clearFlag(PikaObj* self, uint8_t flag) {
+    self->flag &= ~flag;
+}
 
 typedef PikaObj* (*NewFun)(Args* args);
 typedef PikaObj* (*InitFun)(PikaObj* self, Args* args);
@@ -118,12 +131,20 @@ struct MethodInfo {
 
 typedef struct MethodProp {
     void* ptr;
+    char* type_list;
+    char* name;
     ByteCodeFrame* bytecode_frame;
     PikaObj* def_context;
     char* declareation;
-    char* type_list;
-    char* name;
 } MethodProp;
+
+typedef struct MethodPropNative {
+    void* ptr;
+    char* type_list;
+#if !PIKA_NANO_ENABLE
+    char* name;
+#endif
+} MethodPropNative;
 
 typedef PikaObj LibObj;
 typedef PikaObj PikaMaker;
@@ -141,6 +162,7 @@ PIKA_RES obj_setRef(PikaObj* self, char* argPath, PikaObj* pointer);
 PIKA_RES obj_setPtr(PikaObj* self, char* argPath, void* pointer);
 PIKA_RES obj_setFloat(PikaObj* self, char* argPath, pika_float value);
 PIKA_RES obj_setStr(PikaObj* self, char* argPath, char* str);
+PIKA_RES obj_setNone(PikaObj* self, char* argPath);
 PIKA_RES obj_setArg(PikaObj* self, char* argPath, Arg* arg);
 PIKA_RES obj_setArg_noCopy(PikaObj* self, char* argPath, Arg* arg);
 PIKA_RES obj_setBytes(PikaObj* self, char* argPath, uint8_t* src, size_t size);
@@ -245,30 +267,35 @@ char* fast_itoa(char* buf, uint32_t val);
 
 /* shell */
 void pikaScriptShell(PikaObj* self);
-enum shell_state { SHELL_STATE_CONTINUE, SHELL_STATE_EXIT };
+enum shellCTRL { SHELL_CTRL_CONTINUE, SHELL_CTRL_EXIT };
 
 typedef struct ShellConfig ShellConfig;
-typedef enum shell_state (*sh_handler)(PikaObj*, char*, ShellConfig*);
+typedef enum shellCTRL (*sh_handler)(PikaObj*, char*, ShellConfig*);
+typedef char (*sh_getchar)(void);
 
 struct ShellConfig {
     char* prefix;
     sh_handler handler;
     void* context;
     char lineBuff[PIKA_LINE_BUFF_SIZE];
+    size_t line_position;
+    size_t line_curpos;
     char* blockBuffName;
     PIKA_BOOL inBlock;
     char lastChar;
+    sh_getchar fn_getchar;
+    uint8_t stat;
 };
 
-void obj_shellLineProcess(PikaObj* self, ShellConfig* cfg);
+void _do_pikaScriptShell(PikaObj* self, ShellConfig* cfg);
 
-void _temp_obj_shellLineProcess(PikaObj* self, ShellConfig* cfg);
+void _temp__do_pikaScriptShell(PikaObj* self, ShellConfig* cfg);
 
 /*
     need implament :
-        __platform_fopen()
-        __platform_fwrite()
-        __platform_fclose()
+        pika_platform_fopen()
+        pika_platform_fwrite()
+        pika_platform_fclose()
 */
 Method obj_getNativeMethod(PikaObj* self, char* method_name);
 PIKA_RES obj_runNativeMethod(PikaObj* self, char* method_name, Args* args);
@@ -278,8 +305,13 @@ PikaObj* newNormalObj(NewFun newObjFun);
 Arg* arg_setRef(Arg* self, char* name, PikaObj* obj);
 Arg* arg_setObj(Arg* self, char* name, PikaObj* obj);
 
-#define arg_newObj(obj) arg_setObj(NULL, "", (obj))
-#define arg_newRef(obj) arg_setRef(NULL, "", (obj))
+static inline Arg* arg_newObj(PikaObj* obj) {
+    return arg_setObj(NULL, "", (obj));
+}
+
+static inline Arg* arg_newRef(PikaObj* obj) {
+    return arg_setRef(NULL, "", (obj));
+}
 
 PikaObj* obj_importModuleWithByteCodeFrame(PikaObj* self,
                                            char* name,
@@ -302,7 +334,7 @@ int32_t obj_newDirectObj(PikaObj* self, char* objName, NewFun newFunPtr);
 int obj_runModule(PikaObj* self, char* module_name);
 char* obj_toStr(PikaObj* self);
 Arg* arg_newDirectObj(NewFun new_obj_fun);
-enum shell_state obj_runChar(PikaObj* self, char inputChar);
+enum shellCTRL obj_runChar(PikaObj* self, char inputChar);
 
 #define PIKA_PYTHON_BEGIN
 #define PIKA_PYTHON(x)
@@ -310,45 +342,57 @@ enum shell_state obj_runChar(PikaObj* self, char inputChar);
 
 typedef PikaObj PikaEventListener;
 
-void pks_eventLisener_sendSignal(PikaEventListener* self,
-                                 uint32_t eventId,
-                                 int eventSignal);
+void pks_eventListener_registEvent(PikaEventListener* self,
+                                   uint32_t eventId,
+                                   PikaObj* eventHandleObj);
 
-void pks_eventLicener_registEvent(PikaEventListener* self,
+void pks_eventListener_removeEvent(PikaEventListener* self, uint32_t eventId);
+
+void _do_pks_eventListener_send(PikaEventListener* self,
+                                uint32_t eventId,
+                                Arg* eventData,
+                                PIKA_BOOL pickupWhenNoVM);
+
+void pks_eventListener_sendSignal(PikaEventListener* self,
                                   uint32_t eventId,
-                                  PikaObj* eventHandleObj);
+                                  int eventSignal);
 
-void pks_eventLicener_removeEvent(PikaEventListener* self, uint32_t eventId);
+void pks_eventListener_send(PikaEventListener* self,
+                            uint32_t eventId,
+                            Arg* eventData);
 
-PikaObj* pks_eventLisener_getEventHandleObj(PikaEventListener* self,
-                                            uint32_t eventId);
+PikaObj* pks_eventListener_getEventHandleObj(PikaEventListener* self,
+                                             uint32_t eventId);
 
-void pks_eventLisener_init(PikaEventListener** p_self);
-void pks_eventLisener_deinit(PikaEventListener** p_self);
+void pks_eventListener_init(PikaEventListener** p_self);
+void pks_eventListener_deinit(PikaEventListener** p_self);
 PikaObj* methodArg_getDefContext(Arg* method_arg);
-PikaObj* Obj_linkLibraryFile(PikaObj* self, char* input_file_name);
+PikaObj* obj_linkLibraryFile(PikaObj* self, char* input_file_name);
 NewFun obj_getClass(PikaObj* obj);
 
 void pks_printVersion(void);
 void pks_getVersion(char* buff);
 void* obj_getStruct(PikaObj* self, char* name);
 
-#define obj_refcntDec(self) (((self)->refcnt--))
-#define obj_refcntInc(self) (((self)->refcnt)++)
-#define obj_refcntNow(self) ((self)->refcnt)
+static inline void obj_refcntDec(PikaObj* self) {
+    self->refcnt--;
+}
+
+static inline void obj_refcntInc(PikaObj* self) {
+    self->refcnt++;
+}
+
+static inline uint8_t obj_refcntNow(PikaObj* self) {
+    return self->refcnt;
+}
 
 #define obj_setStruct(PikaObj_p_self, char_p_name, struct_) \
     args_setStruct(((PikaObj_p_self)->list), char_p_name, struct_)
 
 #define ABSTRACT_METHOD_NEED_OVERRIDE_ERROR(_)                            \
     obj_setErrorCode(self, 1);                                            \
-    __platform_printf("Error: abstract method `%s()` need override.\r\n", \
+    pika_platform_printf("Error: abstract method `%s()` need override.\r\n", \
                       __FUNCTION__)
-
-#define WEAK_FUNCTION_NEED_OVERRIDE_ERROR(_)                            \
-    __platform_printf("Error: weak function `%s()` need override.\r\n", \
-                      __FUNCTION__);                                    \
-    while (1)
 
 char* obj_cacheStr(PikaObj* self, char* str);
 PikaObj* _arg_to_obj(Arg* self, PIKA_BOOL* pIsTemp);
@@ -364,7 +408,7 @@ char* __printBytes(PikaObj* self, Arg* arg);
 #define PIKASCRIPT_VERSION_REQUIRE_MINIMUN(majer, minor, micro) \
     (PIKASCRIPT_VERSION_NUM >= PIKASCRIPT_VERSION_TO_NUM(majer, minor, micro))
 
-/*
+/* [example]
 const MethodProp floatMethod = {
     .ptr = (void*)PikaStdLib_SysObj_floatMethod,
     .bytecode_frame = NULL,
@@ -375,15 +419,20 @@ const MethodProp floatMethod = {
 };
 */
 
+#if !PIKA_NANO_ENABLE
 #define method_typedef(_method, _name, _typelist) \
-    const MethodProp _method##Prop = {            \
+    const MethodPropNative _method##Prop = {      \
         .ptr = (void*)_method##Method,            \
-        .bytecode_frame = NULL,                   \
-        .def_context = NULL,                      \
-        .declareation = NULL,                     \
         .type_list = _typelist,                   \
         .name = _name,                            \
     };
+#else
+#define method_typedef(_method, _name, _typelist) \
+    const MethodPropNative _method##Prop = {      \
+        .ptr = (void*)_method##Method,            \
+        .type_list = _typelist,                   \
+    };
+#endif
 
 /* clang-format off */
 #if PIKA_ARG_CACHE_ENABLE
@@ -393,7 +442,7 @@ const MethodProp floatMethod = {
             {                                       \
                 .buffer = (uint8_t*)&_method##Prop  \
             },                                      \
-        .size = sizeof(MethodProp),                 \
+        .size = sizeof(MethodPropNative),                 \
         .heap_size = 0,                             \
         .type = _type,                              \
         .flag = 0,                                  \
@@ -406,7 +455,7 @@ const MethodProp floatMethod = {
             {                                       \
                 .buffer = (uint8_t*)&_method##Prop  \
             },                                      \
-        .size = sizeof(MethodProp),                 \
+        .size = sizeof(MethodPropNative),                 \
         .type = _type,                              \
         .flag = 0,                                  \
         .name_hash = _hash                          \
@@ -454,5 +503,18 @@ void _obj_updateProxyFlag(PikaObj* self);
     _obj_updateProxyFlag((_self))
 
 Arg* _obj_getProp(PikaObj* obj, char* name);
+Arg* __eventListener_runEvent_dataInt(PikaEventListener* lisener,
+                                      uint32_t eventId,
+                                      int eventSignal);
+
+Arg* __eventListener_runEvent(PikaEventListener* lisener,
+                              uint32_t eventId,
+                              Arg* eventData);
+
+Arg* pks_eventListener_sendSignalAwaitResult(PikaEventListener* self,
+                                             uint32_t eventId,
+                                             int eventSignal);
+
+void obj_printModules(PikaObj* self);
 
 #endif

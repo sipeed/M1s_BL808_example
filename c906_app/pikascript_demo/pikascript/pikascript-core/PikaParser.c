@@ -35,12 +35,14 @@
 
 /* local head */
 typedef QueueObj AST;
-char* Lexer_getTokens(Args* outBuffs, char* stmt);
+char* Lexer_getTokenStream(Args* outBuffs, char* stmt);
 char* AST_genAsm(AST* ast, Args* outBuffs);
 int32_t AST_deinit(AST* ast);
 
-uint8_t Tokens_isContain(char* tokens, enum TokenType token_type, char* pyload);
-char* Tokens_pop(Args* buffs_p, char** tokens);
+uint8_t TokenStream_isContain(char* tokenStream,
+                              enum TokenType token_type,
+                              char* pyload);
+char* TokenStream_pop(Args* buffs_p, char** tokenStream);
 
 /* Cursor preivilage */
 void _Cursor_init(struct Cursor* cs);
@@ -57,11 +59,11 @@ char* Cursor_popToken(Args* buffs, char** stmt, char* devide);
 PIKA_BOOL Cursor_isContain(char* stmt, TokenType type, char* pyload);
 
 char* Parser_linesToAsm(Args* outBuffs, char* multiLine);
-uint16_t Tokens_getSize(char* tokens) {
-    if (strEqu("", tokens)) {
+uint16_t TokenStream_getSize(char* tokenStream) {
+    if (strEqu("", tokenStream)) {
         return 0;
     }
-    return strCountSign(tokens, 0x1F) + 1;
+    return strCountSign(tokenStream, 0x1F) + 1;
 }
 
 char* strsPopTokenWithSkip_byStr(Args* outBuffs,
@@ -95,7 +97,7 @@ char* strsPopTokenWithSkip_byStr(Args* outBuffs,
     Cursor_deinit(&cs);
     char* keeped = arg_getStr(keeped_arg);
     char* poped = strsCopy(outBuffs, arg_getStr(poped_arg));
-    __platform_memcpy(stmts, keeped, strGetSize(keeped) + 1);
+    pika_platform_memcpy(stmts, keeped, strGetSize(keeped) + 1);
     arg_deinit(poped_arg);
     arg_deinit(keeped_arg);
     return poped;
@@ -121,32 +123,11 @@ char* strsGetCleanCmd(Args* outBuffs, char* cmd) {
     return strOut;
 }
 
-char* strsDeleteBetween(Args* buffs_p, char* strIn, char begin, char end) {
-    int32_t size = strGetSize(strIn);
-    char* strOut = args_getBuff(buffs_p, size);
-    uint8_t deepth = 0;
-    uint32_t iOut = 0;
-    for (int i = 0; i < size; i++) {
-        if (end == strIn[i]) {
-            deepth--;
-        }
-        if (0 == deepth) {
-            strOut[iOut] = strIn[i];
-            iOut++;
-        }
-        if (begin == strIn[i]) {
-            deepth++;
-        }
-    }
-    strOut[iOut] = 0;
-    return strOut;
-}
-
 static uint8_t Lexer_isError(char* line) {
     Args buffs = {0};
     uint8_t res = 0; /* not error */
-    char* tokens = Lexer_getTokens(&buffs, line);
-    if (NULL == tokens) {
+    char* tokenStream = Lexer_getTokenStream(&buffs, line);
+    if (NULL == tokenStream) {
         res = 1; /* lex error */
         goto exit;
     }
@@ -156,10 +137,10 @@ exit:
     return res;
 }
 
-static char* __removeTokensBetween(Args* outBuffs,
-                                   char* input,
-                                   char* token_pyload1,
-                                   char* token_pyload2) {
+static char* Cursor_removeTokensBetween(Args* outBuffs,
+                                        char* input,
+                                        char* token_pyload1,
+                                        char* token_pyload2) {
     Args buffs = {0};
     uint8_t block_deepth = 0;
     char* output = "";
@@ -188,9 +169,9 @@ static char* __removeTokensBetween(Args* outBuffs,
 char* _remove_sub_stmt(Args* outBuffs, char* stmt) {
     Args buffs = {0};
     stmt = strsCopy(&buffs, stmt);
-    stmt = __removeTokensBetween(&buffs, stmt, "(", ")");
-    stmt = __removeTokensBetween(&buffs, stmt, "[", "]");
-    stmt = __removeTokensBetween(&buffs, stmt, "{", "}");
+    stmt = Cursor_removeTokensBetween(&buffs, stmt, "(", ")");
+    stmt = Cursor_removeTokensBetween(&buffs, stmt, "[", "]");
+    stmt = Cursor_removeTokensBetween(&buffs, stmt, "{", "}");
     char* res = args_cacheStr(outBuffs, stmt);
     strsDeinit(&buffs);
     return res;
@@ -354,16 +335,16 @@ exit:
     return stmtType;
 }
 
-char* Lexer_printTokens(Args* outBuffs, char* tokens) {
-    pika_assert(tokens);
+char* Lexer_printTokenStream(Args* outBuffs, char* tokenStream) {
+    pika_assert(tokenStream);
     /* init */
     Args buffs = {0};
     char* printOut = strsCopy(&buffs, "");
 
     /* process */
-    uint16_t token_size = Tokens_getSize(tokens);
+    uint16_t token_size = TokenStream_getSize(tokenStream);
     for (uint16_t i = 0; i < token_size; i++) {
-        char* token = Tokens_pop(&buffs, &tokens);
+        char* token = TokenStream_pop(&buffs, &tokenStream);
         if (token[0] == TOKEN_operator) {
             printOut = strsAppend(&buffs, printOut, "{opt}");
             printOut = strsAppend(&buffs, printOut, token + 1);
@@ -400,7 +381,7 @@ exit:
     return res;
 }
 
-Arg* Lexer_setToken(Arg* tokens_arg,
+Arg* Lexer_setToken(Arg* tokenStream_arg,
                     enum TokenType token_type,
                     char*
                     operator) {
@@ -408,16 +389,16 @@ Arg* Lexer_setToken(Arg* tokens_arg,
     char token_type_buff[3] = {0};
     token_type_buff[0] = 0x1F;
     token_type_buff[1] = token_type;
-    char* tokens = arg_getStr(tokens_arg);
-    tokens = strsAppend(&buffs, tokens, token_type_buff);
-    tokens = strsAppend(&buffs, tokens, operator);
-    Arg* new_tokens_arg = arg_newStr(tokens);
-    arg_deinit(tokens_arg);
+    char* tokenStream = arg_getStr(tokenStream_arg);
+    tokenStream = strsAppend(&buffs, tokenStream, token_type_buff);
+    tokenStream = strsAppend(&buffs, tokenStream, operator);
+    Arg* new_tokenStream_arg = arg_newStr(tokenStream);
+    arg_deinit(tokenStream_arg);
     strsDeinit(&buffs);
-    return new_tokens_arg;
+    return new_tokenStream_arg;
 }
 
-Arg* Lexer_setSymbel(Arg* tokens_arg,
+Arg* Lexer_setSymbel(Arg* tokenStream_arg,
                      char* stmt,
                      int32_t i,
                      int32_t* symbol_start_index) {
@@ -432,43 +413,47 @@ Arg* Lexer_setSymbel(Arg* tokens_arg,
         goto exit;
     }
     symbol_buff = args_getBuff(&buffs, i - *symbol_start_index);
-    __platform_memcpy(symbol_buff, stmt + *symbol_start_index,
+    pika_platform_memcpy(symbol_buff, stmt + *symbol_start_index,
                       i - *symbol_start_index);
     /* literal */
     if ((symbol_buff[0] == '\'') || (symbol_buff[0] == '"')) {
         /* "" or '' */
-        tokens_arg = Lexer_setToken(tokens_arg, TOKEN_literal, symbol_buff);
+        tokenStream_arg =
+            Lexer_setToken(tokenStream_arg, TOKEN_literal, symbol_buff);
         goto exit;
     }
 
     if ((symbol_buff[0] >= '0') && (symbol_buff[0] <= '9')) {
         /* number */
-        tokens_arg = Lexer_setToken(tokens_arg, TOKEN_literal, symbol_buff);
+        tokenStream_arg =
+            Lexer_setToken(tokenStream_arg, TOKEN_literal, symbol_buff);
         goto exit;
     }
 
     if ((symbol_buff[0] == 'b') &&
         ((symbol_buff[1] == '\'') || (symbol_buff[1] == '"'))) {
         /* b"" or b'' */
-        tokens_arg = Lexer_setToken(tokens_arg, TOKEN_literal, symbol_buff);
+        tokenStream_arg =
+            Lexer_setToken(tokenStream_arg, TOKEN_literal, symbol_buff);
         goto exit;
     }
 
     /* symbol */
-    tokens_arg = Lexer_setToken(tokens_arg, TOKEN_symbol, symbol_buff);
+    tokenStream_arg =
+        Lexer_setToken(tokenStream_arg, TOKEN_symbol, symbol_buff);
     goto exit;
 exit:
     *symbol_start_index = -1;
     strsDeinit(&buffs);
-    return tokens_arg;
+    return tokenStream_arg;
 }
 
-/* tokens is devided by space */
+/* tokenStream is devided by space */
 /* a token is [TOKENTYPE|(CONTENT)] */
-char* Lexer_getTokens(Args* outBuffs, char* stmt) {
+char* Lexer_getTokenStream(Args* outBuffs, char* stmt) {
     /* init */
-    Arg* tokens_arg = New_arg(NULL);
-    tokens_arg = arg_setStr(tokens_arg, "", "");
+    Arg* tokenStream_arg = New_arg(NULL);
+    tokenStream_arg = arg_setStr(tokenStream_arg, "", "");
     int32_t size = strGetSize(stmt);
     uint8_t bracket_deepth = 0;
     uint8_t cn2 = 0;
@@ -483,7 +468,7 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
     int32_t symbol_start_index = -1;
     int is_in_string = 0;
     int is_number = 0;
-    char* tokens;
+    char* tokenStream;
 
     /* process */
     for (int32_t i = 0; i < size; i++) {
@@ -550,16 +535,16 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
         if (1 == is_in_string) {
             if ('\'' == c0 && ('\\' != cn1 || ('\\' == cn1 && '\\' == cn2))) {
                 is_in_string = 0;
-                tokens_arg = Lexer_setSymbel(tokens_arg, stmt, i + 1,
-                                             &symbol_start_index);
+                tokenStream_arg = Lexer_setSymbel(tokenStream_arg, stmt, i + 1,
+                                                  &symbol_start_index);
             }
             continue;
         }
         if (2 == is_in_string) {
             if ('"' == c0 && ('\\' != cn1 || ('\\' == cn1 && '\\' == cn2))) {
                 is_in_string = 0;
-                tokens_arg = Lexer_setSymbel(tokens_arg, stmt, i + 1,
-                                             &symbol_start_index);
+                tokenStream_arg = Lexer_setSymbel(tokenStream_arg, stmt, i + 1,
+                                                  &symbol_start_index);
             }
             continue;
         }
@@ -572,11 +557,12 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
         /* match devider*/
         if (('(' == c0) || (')' == c0) || (',' == c0) || ('[' == c0) ||
             (']' == c0) || (':' == c0) || ('{' == c0) || ('}' == c0)) {
-            tokens_arg =
-                Lexer_setSymbel(tokens_arg, stmt, i, &symbol_start_index);
+            tokenStream_arg =
+                Lexer_setSymbel(tokenStream_arg, stmt, i, &symbol_start_index);
             char content[2] = {0};
             content[0] = c0;
-            tokens_arg = Lexer_setToken(tokens_arg, TOKEN_devider, content);
+            tokenStream_arg =
+                Lexer_setToken(tokenStream_arg, TOKEN_devider, content);
             if (c0 == '(') {
                 bracket_deepth++;
             }
@@ -604,10 +590,10 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
                     content[0] = c0;
                     content[1] = c1;
                     content[2] = '=';
-                    tokens_arg = Lexer_setSymbel(tokens_arg, stmt, i,
-                                                 &symbol_start_index);
-                    tokens_arg =
-                        Lexer_setToken(tokens_arg, TOKEN_operator, content);
+                    tokenStream_arg = Lexer_setSymbel(tokenStream_arg, stmt, i,
+                                                      &symbol_start_index);
+                    tokenStream_arg = Lexer_setToken(tokenStream_arg,
+                                                     TOKEN_operator, content);
                     i = i + 2;
                     continue;
                 }
@@ -620,10 +606,10 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
                     char content[3] = {0};
                     content[0] = c0;
                     content[1] = c1;
-                    tokens_arg = Lexer_setSymbel(tokens_arg, stmt, i,
-                                                 &symbol_start_index);
-                    tokens_arg =
-                        Lexer_setToken(tokens_arg, TOKEN_operator, content);
+                    tokenStream_arg = Lexer_setSymbel(tokenStream_arg, stmt, i,
+                                                      &symbol_start_index);
+                    tokenStream_arg = Lexer_setToken(tokenStream_arg,
+                                                     TOKEN_operator, content);
                     i = i + 1;
                     continue;
                 }
@@ -638,10 +624,10 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
                     char content[3] = {0};
                     content[0] = c0;
                     content[1] = c1;
-                    tokens_arg = Lexer_setSymbel(tokens_arg, stmt, i,
-                                                 &symbol_start_index);
-                    tokens_arg =
-                        Lexer_setToken(tokens_arg, TOKEN_operator, content);
+                    tokenStream_arg = Lexer_setSymbel(tokenStream_arg, stmt, i,
+                                                      &symbol_start_index);
+                    tokenStream_arg = Lexer_setToken(tokenStream_arg,
+                                                     TOKEN_operator, content);
                     i = i + 1;
                     continue;
                 }
@@ -653,9 +639,10 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
             */
             char content[2] = {0};
             content[0] = c0;
-            tokens_arg =
-                Lexer_setSymbel(tokens_arg, stmt, i, &symbol_start_index);
-            tokens_arg = Lexer_setToken(tokens_arg, TOKEN_operator, content);
+            tokenStream_arg =
+                Lexer_setSymbel(tokenStream_arg, stmt, i, &symbol_start_index);
+            tokenStream_arg =
+                Lexer_setToken(tokenStream_arg, TOKEN_operator, content);
             continue;
         }
 
@@ -667,10 +654,10 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
         /* not */
         if ('n' == c0) {
             if (('o' == c1) && ('t' == c2) && (' ' == c3)) {
-                tokens_arg =
-                    Lexer_setSymbel(tokens_arg, stmt, i, &symbol_start_index);
-                tokens_arg =
-                    Lexer_setToken(tokens_arg, TOKEN_operator, " not ");
+                tokenStream_arg = Lexer_setSymbel(tokenStream_arg, stmt, i,
+                                                  &symbol_start_index);
+                tokenStream_arg =
+                    Lexer_setToken(tokenStream_arg, TOKEN_operator, " not ");
                 i = i + 3;
                 continue;
             }
@@ -678,10 +665,10 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
         /* and */
         if ('a' == c0) {
             if (('n' == c1) && ('d' == c2) && (' ' == c3)) {
-                tokens_arg =
-                    Lexer_setSymbel(tokens_arg, stmt, i, &symbol_start_index);
-                tokens_arg =
-                    Lexer_setToken(tokens_arg, TOKEN_operator, " and ");
+                tokenStream_arg = Lexer_setSymbel(tokenStream_arg, stmt, i,
+                                                  &symbol_start_index);
+                tokenStream_arg =
+                    Lexer_setToken(tokenStream_arg, TOKEN_operator, " and ");
                 i = i + 3;
                 continue;
             }
@@ -689,9 +676,10 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
         /* or */
         if ('o' == c0) {
             if (('r' == c1) && (' ' == c2)) {
-                tokens_arg =
-                    Lexer_setSymbel(tokens_arg, stmt, i, &symbol_start_index);
-                tokens_arg = Lexer_setToken(tokens_arg, TOKEN_operator, " or ");
+                tokenStream_arg = Lexer_setSymbel(tokenStream_arg, stmt, i,
+                                                  &symbol_start_index);
+                tokenStream_arg =
+                    Lexer_setToken(tokenStream_arg, TOKEN_operator, " or ");
                 i = i + 2;
                 continue;
             }
@@ -699,9 +687,10 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
         /* is */
         if ('i' == c0) {
             if (('s' == c1) && (' ' == c2)) {
-                tokens_arg =
-                    Lexer_setSymbel(tokens_arg, stmt, i, &symbol_start_index);
-                tokens_arg = Lexer_setToken(tokens_arg, TOKEN_operator, " is ");
+                tokenStream_arg = Lexer_setSymbel(tokenStream_arg, stmt, i,
+                                                  &symbol_start_index);
+                tokenStream_arg =
+                    Lexer_setToken(tokenStream_arg, TOKEN_operator, " is ");
                 i = i + 2;
                 continue;
             }
@@ -709,9 +698,10 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
         /* in */
         if ('i' == c0) {
             if (('n' == c1) && (' ' == c2)) {
-                tokens_arg =
-                    Lexer_setSymbel(tokens_arg, stmt, i, &symbol_start_index);
-                tokens_arg = Lexer_setToken(tokens_arg, TOKEN_operator, " in ");
+                tokenStream_arg = Lexer_setSymbel(tokenStream_arg, stmt, i,
+                                                  &symbol_start_index);
+                tokenStream_arg =
+                    Lexer_setToken(tokenStream_arg, TOKEN_operator, " in ");
                 i = i + 2;
                 continue;
             }
@@ -719,9 +709,10 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
         /* as */
         if ('a' == c0) {
             if (('s' == c1) && (' ' == c2)) {
-                tokens_arg =
-                    Lexer_setSymbel(tokens_arg, stmt, i, &symbol_start_index);
-                tokens_arg = Lexer_setToken(tokens_arg, TOKEN_operator, " as ");
+                tokenStream_arg = Lexer_setSymbel(tokenStream_arg, stmt, i,
+                                                  &symbol_start_index);
+                tokenStream_arg =
+                    Lexer_setToken(tokenStream_arg, TOKEN_operator, " as ");
                 i = i + 2;
                 continue;
             }
@@ -730,10 +721,10 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
         if ('i' == c0) {
             if (('m' == c1) && ('p' == c2) && ('o' == c3) && ('r' == c4) &&
                 ('t' == c5) && (' ' == c6)) {
-                tokens_arg =
-                    Lexer_setSymbel(tokens_arg, stmt, i, &symbol_start_index);
-                tokens_arg =
-                    Lexer_setToken(tokens_arg, TOKEN_operator, " import ");
+                tokenStream_arg = Lexer_setSymbel(tokenStream_arg, stmt, i,
+                                                  &symbol_start_index);
+                tokenStream_arg =
+                    Lexer_setToken(tokenStream_arg, TOKEN_operator, " import ");
                 i = i + 5;
                 continue;
             }
@@ -747,8 +738,8 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
                 symbol_start_index = -1;
             } else {
                 /* already get symbal */
-                tokens_arg =
-                    Lexer_setSymbel(tokens_arg, stmt, i, &symbol_start_index);
+                tokenStream_arg = Lexer_setSymbel(tokenStream_arg, stmt, i,
+                                                  &symbol_start_index);
             }
         }
         if (i == size - 1) {
@@ -756,19 +747,19 @@ char* Lexer_getTokens(Args* outBuffs, char* stmt) {
             // if('\n' == c0){
             //     continue;
             // }
-            tokens_arg =
-                Lexer_setSymbel(tokens_arg, stmt, size, &symbol_start_index);
+            tokenStream_arg = Lexer_setSymbel(tokenStream_arg, stmt, size,
+                                              &symbol_start_index);
         }
     }
     /* output */
-    tokens = arg_getStr(tokens_arg);
-    tokens = strsCopy(outBuffs, tokens);
-    arg_deinit(tokens_arg);
-    return tokens;
+    tokenStream = arg_getStr(tokenStream_arg);
+    tokenStream = strsCopy(outBuffs, tokenStream);
+    arg_deinit(tokenStream_arg);
+    return tokenStream;
 }
 
-char* Tokens_pop(Args* buffs_p, char** tokens) {
-    return strsPopToken(buffs_p, tokens, 0x1F);
+char* TokenStream_pop(Args* buffs_p, char** tokenStream) {
+    return strsPopToken(buffs_p, tokenStream, 0x1F);
 }
 
 enum TokenType Token_getType(char* token) {
@@ -779,15 +770,15 @@ char* Token_getPyload(char* token) {
     return (char*)((uintptr_t)token + 1);
 }
 
-uint8_t Tokens_isContain(char* tokens,
-                         enum TokenType token_type,
-                         char* pyload) {
+uint8_t TokenStream_isContain(char* tokenStream,
+                              enum TokenType token_type,
+                              char* pyload) {
     Args buffs = {0};
-    char* tokens_buff = strsCopy(&buffs, tokens);
+    char* tokenStream_buff = strsCopy(&buffs, tokenStream);
     uint8_t res = 0;
-    uint16_t token_size = Tokens_getSize(tokens);
+    uint16_t token_size = TokenStream_getSize(tokenStream);
     for (int i = 0; i < token_size; i++) {
-        char* token = Tokens_pop(&buffs, &tokens_buff);
+        char* token = TokenStream_pop(&buffs, &tokenStream_buff);
         if (token_type == Token_getType(token)) {
             if (strEqu(Token_getPyload(token), pyload)) {
                 res = 1;
@@ -809,11 +800,11 @@ static const char operators[][9] = {
 char* Lexer_getOperator(Args* outBuffs, char* stmt) {
     Args buffs = {0};
     char* operator= NULL;
-    char* tokens = Lexer_getTokens(&buffs, stmt);
+    char* tokenStream = Lexer_getTokenStream(&buffs, stmt);
 
     // use parse state foreach to get operator
     for (uint32_t i = 0; i < sizeof(operators) / 9; i++) {
-        Cursor_forEachToken(cs, tokens) {
+        Cursor_forEachToken(cs, tokenStream) {
             Cursor_iterStart(&cs);
             // get operator
             if (strEqu(cs.token2.pyload, (char*)operators[i])) {
@@ -869,11 +860,11 @@ char* Lexer_getOperator(Args* outBuffs, char* stmt) {
 const char void_str[] = "";
 
 void LexToken_update(struct LexToken* lex_token) {
-    lex_token->type = Token_getType(lex_token->token);
+    lex_token->type = Token_getType(lex_token->tokenStream);
     if (lex_token->type == TOKEN_strEnd) {
         lex_token->pyload = (char*)void_str;
     } else {
-        lex_token->pyload = Token_getPyload(lex_token->token);
+        lex_token->pyload = Token_getPyload(lex_token->tokenStream);
     }
 }
 
@@ -881,12 +872,13 @@ void Cursor_iterStart(struct Cursor* cs) {
     cs->iter_index++;
     cs->iter_buffs = New_strBuff();
     /* token1 is the last token */
-    cs->token1.token = strsCopy(cs->iter_buffs, arg_getStr(cs->last_token));
+    cs->token1.tokenStream =
+        strsCopy(cs->iter_buffs, arg_getStr(cs->last_token));
     /* token2 is the next token */
-    cs->token2.token = Tokens_pop(cs->iter_buffs, &cs->tokens);
+    cs->token2.tokenStream = TokenStream_pop(cs->iter_buffs, &cs->tokenStream);
     /* store last token */
     arg_deinit(cs->last_token);
-    cs->last_token = arg_newStr(cs->token2.token);
+    cs->last_token = arg_newStr(cs->token2.tokenStream);
 
     LexToken_update(&cs->token1);
     LexToken_update(&cs->token2);
@@ -912,12 +904,12 @@ void Cursor_iterStart(struct Cursor* cs) {
 
 void LexToken_init(struct LexToken* lt) {
     lt->pyload = NULL;
-    lt->token = NULL;
+    lt->tokenStream = NULL;
     lt->type = TOKEN_strEnd;
 }
 
 void _Cursor_init(struct Cursor* cs) {
-    cs->tokens = NULL;
+    cs->tokenStream = NULL;
     cs->length = 0;
     cs->iter_index = 0;
     cs->branket_deepth = 0;
@@ -945,12 +937,12 @@ void _Cursor_parse(struct Cursor* cs, char* stmt) {
         cs->result = PIKA_RES_ERR_SYNTAX_ERROR;
         return;
     }
-    cs->tokens = Lexer_getTokens(cs->buffs_p, stmt);
-    if (NULL == cs->tokens) {
+    cs->tokenStream = Lexer_getTokenStream(cs->buffs_p, stmt);
+    if (NULL == cs->tokenStream) {
         cs->result = PIKA_RES_ERR_SYNTAX_ERROR;
         return;
     }
-    cs->length = Tokens_getSize(cs->tokens);
+    cs->length = TokenStream_getSize(cs->tokenStream);
 }
 
 void _Cursor_beforeIter(struct Cursor* cs) {
@@ -958,8 +950,8 @@ void _Cursor_beforeIter(struct Cursor* cs) {
     if (cs->result != PIKA_RES_OK) {
         return;
     }
-    Tokens_pop(cs->buffs_p, &cs->tokens);
-    cs->last_token = arg_newStr(Tokens_pop(cs->buffs_p, &cs->tokens));
+    TokenStream_pop(cs->buffs_p, &cs->tokenStream);
+    cs->last_token = arg_newStr(TokenStream_pop(cs->buffs_p, &cs->tokenStream));
 }
 
 PIKA_BOOL Cursor_isContain(char* stmt, TokenType type, char* pyload) {
@@ -969,19 +961,19 @@ PIKA_BOOL Cursor_isContain(char* stmt, TokenType type, char* pyload) {
     }
     Args buffs = {0};
     PIKA_BOOL res = PIKA_FALSE;
-    char* tokens = Lexer_getTokens(&buffs, stmt);
-    if (Tokens_isContain(tokens, type, pyload)) {
+    char* tokenStream = Lexer_getTokenStream(&buffs, stmt);
+    if (TokenStream_isContain(tokenStream, type, pyload)) {
         res = PIKA_TRUE;
     }
     strsDeinit(&buffs);
     return res;
 }
 
-char* Cursor_popToken(Args* buffs, char** tokens, char* devide) {
+char* Cursor_popToken(Args* buffs, char** tokenStream, char* devide) {
     Arg* out_item = arg_newStr("");
-    Arg* tokens_after = arg_newStr("");
+    Arg* tokenStream_after = arg_newStr("");
     PIKA_BOOL is_find_devide = PIKA_FALSE;
-    Cursor_forEachToken(cs, *tokens) {
+    Cursor_forEachToken(cs, *tokenStream) {
         Cursor_iterStart(&cs);
         if (!is_find_devide) {
             if ((cs.branket_deepth == 0 && strEqu(cs.token1.pyload, devide)) ||
@@ -994,7 +986,8 @@ char* Cursor_popToken(Args* buffs, char** tokens, char* devide) {
         if (!is_find_devide) {
             out_item = arg_strAppend(out_item, cs.token1.pyload);
         } else {
-            tokens_after = arg_strAppend(tokens_after, cs.token1.pyload);
+            tokenStream_after =
+                arg_strAppend(tokenStream_after, cs.token1.pyload);
         }
         Cursor_iterEnd(&cs);
     }
@@ -1002,11 +995,11 @@ char* Cursor_popToken(Args* buffs, char** tokens, char* devide) {
     /* cache out item */
     char* out_item_str = strsCopy(buffs, arg_getStr(out_item));
     arg_deinit(out_item);
-    /* cache tokens after */
-    char* token_after_str = strsCopy(buffs, arg_getStr(tokens_after));
-    arg_deinit(tokens_after);
-    /* update tokens */
-    *tokens = token_after_str;
+    /* cache tokenStream after */
+    char* token_after_str = strsCopy(buffs, arg_getStr(tokenStream_after));
+    arg_deinit(tokenStream_after);
+    /* update tokenStream */
+    *tokenStream = token_after_str;
     return out_item_str;
 }
 
@@ -1015,6 +1008,9 @@ static void Slice_getPars(Args* outBuffs,
                           char** pStart,
                           char** pEnd,
                           char** pStep) {
+#if PIKA_NANO_ENABLE
+    return;
+#endif
     Args buffs = {0};
     *pStart = "";
     *pEnd = "";
@@ -1510,7 +1506,7 @@ static void _AST_parse_slice(AST* ast, Args* buffs, char* stmt) {
         if (index == 0 && strEqu(slice_str, "")) {
             AST_parseSubStmt(ast, "0");
         } else if (index == 1 && strEqu(slice_str, "")) {
-            AST_parseSubStmt(ast, "-1");
+            AST_parseSubStmt(ast, "-99999");
         } else {
             AST_parseSubStmt(ast, slice_str);
         }
@@ -1519,6 +1515,59 @@ static void _AST_parse_slice(AST* ast, Args* buffs, char* stmt) {
             break;
         }
     }
+}
+
+char* Suger_not_in(Args* out_buffs, char* line) {
+#if PIKA_NANO_ENABLE
+    return line;
+#endif
+    char* ret = line;
+    char* stmt1 = "";
+    char* stmt2 = "";
+    PIKA_BOOL got_not_in = PIKA_FALSE;
+    PIKA_BOOL skip = PIKA_FALSE;
+    Args buffs = {0};
+    if (!Cursor_isContain(line, TOKEN_operator, " not ")) {
+        ret = line;
+        goto __exit;
+    }
+    if (!Cursor_isContain(line, TOKEN_operator, " in ")) {
+        ret = line;
+        goto __exit;
+    }
+
+    /* stmt1 not in stmt2 => not stmt1 in stmt2 */
+    Cursor_forEachToken(cs, line) {
+        Cursor_iterStart(&cs);
+        if (!got_not_in) {
+            if (strEqu(cs.token1.pyload, " not ") &&
+                strEqu(cs.token2.pyload, " in ")) {
+                got_not_in = PIKA_TRUE;
+                Cursor_iterEnd(&cs);
+                continue;
+            }
+            stmt1 = strsAppend(&buffs, stmt1, cs.token1.pyload);
+        } else {
+            if (!skip) {
+                skip = PIKA_TRUE;
+                Cursor_iterEnd(&cs);
+                continue;
+            }
+            stmt2 = strsAppend(&buffs, stmt2, cs.token1.pyload);
+        }
+        Cursor_iterEnd(&cs);
+    }
+    Cursor_deinit(&cs);
+    if (!got_not_in) {
+        ret = line;
+        goto __exit;
+    }
+    ret = strsFormat(out_buffs, strGetSize(line) + 3, " not %s in %s", stmt1,
+                     stmt2);
+    goto __exit;
+__exit:
+    strsDeinit(&buffs);
+    return ret;
 }
 
 AST* AST_parseStmt(AST* ast, char* stmt) {
@@ -1543,7 +1592,7 @@ AST* AST_parseStmt(AST* ast, char* stmt) {
         uint8_t is_meet_equ = 0;
         Cursor_forEachToken(cs, stmt) {
             Cursor_iterStart(&cs);
-            if (strEqu(cs.token1.pyload, "=") &&
+            if (!is_meet_equ && strEqu(cs.token1.pyload, "=") &&
                 cs.token1.type == TOKEN_operator) {
                 is_meet_equ = 1;
                 Cursor_iterEnd(&cs);
@@ -1580,6 +1629,7 @@ AST* AST_parseStmt(AST* ast, char* stmt) {
     }
     /* solve operator stmt */
     if (STMT_operator == stmtType) {
+        right = Suger_not_in(&buffs, right);
         char* rightWithoutSubStmt = _remove_sub_stmt(&buffs, right);
         char* operator= Lexer_getOperator(&buffs, rightWithoutSubStmt);
         if (NULL == operator) {
@@ -1745,12 +1795,17 @@ char* Parser_removeAnnotation(char* line) {
 }
 
 char* _defGetDefault(Args* outBuffs, char** dec_out) {
+#if PIKA_NANO_ENABLE
+    return "";
+#endif
     Args buffs = {0};
     char* dec_str = strsCopy(&buffs, *dec_out);
     char* fn_name = strsGetFirstToken(&buffs, dec_str, '(');
     Arg* dec_arg = arg_strAppend(arg_newStr(fn_name), "(");
     Arg* default_arg = arg_newStr("");
     char* arg_list = strsCut(&buffs, dec_str, '(', ')');
+    char* default_out = NULL;
+    pika_assert(NULL != arg_list);
     int arg_num = strCountSign(arg_list, ',') + 1;
     for (int i = 0; i < arg_num; i++) {
         char* arg_str = strsPopToken(&buffs, &arg_list, ',');
@@ -1770,7 +1825,7 @@ char* _defGetDefault(Args* outBuffs, char** dec_out) {
     strPopLastToken(arg_getStr(dec_arg), ',');
     dec_arg = arg_strAppend(dec_arg, ")");
     *dec_out = strsCopy(outBuffs, arg_getStr(dec_arg));
-    char* default_out = strsCopy(outBuffs, arg_getStr(default_arg));
+    default_out = strsCopy(outBuffs, arg_getStr(default_arg));
     strPopLastToken(default_out, ',');
     arg_deinit(dec_arg);
     arg_deinit(default_arg);
@@ -1823,8 +1878,9 @@ AST* AST_parseLine_withBlockStack_withBlockDeepth(char* line,
     /* set block deepth */
     if (block_deepth_now == -1) {
         /* get block_deepth error */
-        __platform_printf(
-            "IndentationError: unexpected indent, only support 4 spaces\r\n");
+        pika_platform_printf(
+            "IndentationError: unexpected indent, only support 4 "
+            "spaces\r\n");
         obj_deinit(ast);
         ast = NULL;
         goto exit;
@@ -1991,9 +2047,15 @@ AST* AST_parseLine_withBlockStack_withBlockDeepth(char* line,
         AST_setNodeAttr(ast, "global", global_list);
         goto block_matched;
     }
-    if (strIsStartWith(line_start, "del ")) {
+    if (strIsStartWith(line_start, "del ") ||
+        strIsStartWith(line_start, "del(")) {
         stmt = "";
-        char* del_dir = line_start + sizeof("del ") - 1;
+        char* del_dir = NULL;
+        if (line_start[3] == '(') {
+            del_dir = strsCut(&buffs, line_start, '(', ')');
+        } else {
+            del_dir = line_start + sizeof("del ") - 1;
+        }
         del_dir = strsGetCleanCmd(&buffs, del_dir);
         AST_setNodeAttr(ast, "del", del_dir);
         goto block_matched;
@@ -2007,6 +2069,11 @@ AST* AST_parseLine_withBlockStack_withBlockDeepth(char* line,
             goto exit;
         }
         declare = strsGetCleanCmd(&buffs, declare);
+        if (!strIsContain(declare, '(') || !strIsContain(declare, ')')) {
+            obj_deinit(ast);
+            ast = NULL;
+            goto exit;
+        }
         char* defaultStmt = _defGetDefault(&buffs, &declare);
         AST_setNodeBlock(ast, "def");
         AST_setNodeAttr(ast, "declare", declare);
@@ -2096,6 +2163,9 @@ exit:
 }
 
 static PIKA_BOOL _check_is_multi_assign(char* arg_list) {
+#if PIKA_NANO_ENABLE
+    return PIKA_FALSE;
+#endif
     PIKA_BOOL res = PIKA_FALSE;
     Cursor_forEachToken(cs, arg_list) {
         Cursor_iterStart(&cs);
@@ -2185,6 +2255,8 @@ static char* Suger_from_import_as(Args* buffs_p, char* line) {
     char* module = NULL;
     char* alias = NULL;
     char* stmt = line + 5;
+    char* class_after = "";
+
     if (!strIsStartWith(line, "from ")) {
         line_out = line;
         goto exit;
@@ -2208,7 +2280,6 @@ static char* Suger_from_import_as(Args* buffs_p, char* line) {
         goto exit;
     }
 
-    char* class_after = "";
     while (1) {
         char* class_item = Cursor_popToken(&buffs, &class, ",");
         if (class_item[0] == '\0') {
@@ -2230,6 +2301,9 @@ exit:
 }
 
 static char* Suger_import(Args* outbuffs, char* line) {
+#if !PIKA_SYNTAX_IMPORT_EX_ENABLE
+    return line;
+#endif
     line = Suger_import_as(outbuffs, line);
     line = Suger_from_import_as(outbuffs, line);
     Arg* line_buff = arg_newStr("");
@@ -2267,6 +2341,7 @@ static char* Suger_import(Args* outbuffs, char* line) {
 static char* Parser_linePreProcess(Args* outbuffs, char* line) {
     line = Parser_removeAnnotation(line);
     Arg* line_buff = NULL;
+    int line_num = 0;
     /* check syntex error */
     if (Lexer_isError(line)) {
         line = NULL;
@@ -2278,7 +2353,7 @@ static char* Parser_linePreProcess(Args* outbuffs, char* line) {
     line = Suger_import(outbuffs, line);
 
     /* process multi assign */
-    int line_num = strCountSign(line, '\n') + 1;
+    line_num = strCountSign(line, '\n') + 1;
     line_buff = arg_newStr("");
     for (int i = 0; i < line_num; i++) {
         if (i > 0) {
@@ -2317,7 +2392,7 @@ char* Parser_LineToAsm(Args* buffs_p, char* line, Stack* blockStack) {
     line_num = strCountSign(line, '\n') + 1;
     for (int i = 0; i < line_num; i++) {
         char* single_line = strsPopToken(buffs_p, &line, '\n');
-        /* parse tokens to AST */
+        /* parse line to AST */
         ast = AST_parseLine_withBlockStack(single_line, blockStack);
         /* gen ASM from AST */
         if (ASM == NULL) {
@@ -2507,10 +2582,18 @@ exit:
 };
 
 PIKA_RES Parser_linesToBytes(ByteCodeFrame* bf, char* py_lines) {
+#if PIKA_BYTECODE_ONLY_ENABLE
+    pika_platform_printf(
+        "Error: In bytecode-only mode, can not parse python script.\r\n");
+    pika_platform_printf(
+        " Note: Please check PIKA_BYTECODE_ONLY_ENABLE config.\r\n");
+    return PIKA_RES_ERR_SYNTAX_ERROR;
+#else
     if (1 == (uintptr_t)_Parser_linesToBytesOrAsm(NULL, bf, py_lines)) {
         return PIKA_RES_OK;
     }
     return PIKA_RES_ERR_SYNTAX_ERROR;
+#endif
 }
 
 char* Parser_linesToAsm(Args* outBuffs, char* multi_line) {
@@ -2573,7 +2656,7 @@ char* AST_genAsm_sub(AST* ast, AST* subAst, Args* outBuffs, char* pikaAsm) {
         char* astNodeVal = obj_getStr(subAst, rule.ast);
         if (NULL != astNodeVal) {
             /* e.g. "0 RUN print \n" */
-            __platform_sprintf(buff, "%d %s ", deepth, rule.ins);
+            pika_platform_sprintf(buff, "%d %s ", deepth, rule.ins);
             Arg* abuff = arg_newStr(buff);
             if (rule.type == VAL_DYNAMIC) {
                 abuff = arg_strAppend(abuff, astNodeVal);
@@ -2614,7 +2697,7 @@ char* GenRule_toAsm(GenRule rule,
     /* parse stmt ast */
     pikaAsm = AST_genAsm_sub(ast, ast, buffs, pikaAsm);
     /* e.g. "0 CTN \n" */
-    __platform_sprintf(buff, "%d %s ", deepth, rule.ins);
+    pika_platform_sprintf(buff, "%d %s ", deepth, rule.ins);
     Arg* abuff = arg_newStr(buff);
     if (rule.type == VAL_DYNAMIC) {
         abuff = arg_strAppend(abuff, obj_getStr(ast, rule.ast));
@@ -2731,7 +2814,9 @@ char* AST_genAsm(AST* ast, Args* outBuffs) {
     if (strEqu(AST_getThisBlock(ast), "for")) {
         /* for "for" iter */
         char* arg_in = obj_getStr(ast, "arg_in");
+#if !PIKA_NANO_ENABLE
         char* arg_in_kv = NULL;
+#endif
         Arg* newAsm_arg = arg_newStr("");
         char _l_x[] = "$lx";
         char block_deepth_char = '0';
@@ -2756,10 +2841,12 @@ char* AST_genAsm(AST* ast, Args* outBuffs) {
             DEL $n
         */
 
+#if !PIKA_NANO_ENABLE
         if (_check_is_multi_assign(arg_in)) {
             arg_in_kv = arg_in;
             arg_in = "$tmp";
         }
+#endif
 
         pikaAsm = ASM_addBlockDeepth(ast, outBuffs, pikaAsm, 0);
         newAsm_arg = arg_strAppend(newAsm_arg, "0 RUN ");
@@ -2776,6 +2863,7 @@ char* AST_genAsm(AST* ast, Args* outBuffs) {
         pikaAsm = strsAppend(&buffs, pikaAsm, arg_getStr(newAsm_arg));
         arg_deinit(newAsm_arg);
 
+#if !PIKA_NANO_ENABLE
         if (NULL != arg_in_kv) {
             int out_num = 0;
             while (1) {
@@ -2796,6 +2884,7 @@ char* AST_genAsm(AST* ast, Args* outBuffs) {
             pikaAsm = ASM_addBlockDeepth(ast, outBuffs, pikaAsm, 1);
             pikaAsm = strsAppend(&buffs, pikaAsm, "0 DEL $tmp\n");
         }
+#endif
 
         is_block_matched = 1;
         goto exit;
@@ -2811,13 +2900,16 @@ char* AST_genAsm(AST* ast, Args* outBuffs) {
         goto exit;
     }
     if (strEqu(AST_getThisBlock(ast), "def")) {
+#if !PIKA_NANO_ENABLE
         char* defaultStmts = AST_getNodeAttr(ast, "default");
+#endif
         pikaAsm = strsAppend(&buffs, pikaAsm, "0 DEF ");
         pikaAsm = strsAppend(&buffs, pikaAsm, AST_getNodeAttr(ast, "declare"));
         pikaAsm = strsAppend(&buffs, pikaAsm,
                              "\n"
                              "0 JMP 1\n");
 
+#if !PIKA_NANO_ENABLE
         if (NULL != defaultStmts) {
             int stmt_num = strGetTokenNum(defaultStmts, ',');
             for (int i = 0; i < stmt_num; i++) {
@@ -2835,6 +2927,7 @@ char* AST_genAsm(AST* ast, Args* outBuffs) {
                 AST_deinit(ast_this);
             }
         }
+#endif
 
         is_block_matched = 1;
         goto exit;
@@ -3022,14 +3115,14 @@ char* Parser_linesToArray(char* lines) {
     /* do something */
     byteCodeFrame_print(&bytecode_frame);
 
-    __platform_printf("\n\n/* clang-format off */\n");
-    __platform_printf("PIKA_PYTHON(\n");
-    __platform_printf("%s\n", lines);
-    __platform_printf(")\n");
-    __platform_printf("/* clang-format on */\n");
+    pika_platform_printf("\n\n/* clang-format off */\n");
+    pika_platform_printf("PIKA_PYTHON(\n");
+    pika_platform_printf("%s\n", lines);
+    pika_platform_printf(")\n");
+    pika_platform_printf("/* clang-format on */\n");
     byteCodeFrame_printAsArray(&bytecode_frame);
     /* deinit */
     byteCodeFrame_deinit(&bytecode_frame);
-    __platform_printf("\n\n");
+    pika_platform_printf("\n\n");
     return NULL;
 }

@@ -25,6 +25,7 @@ void pika_lvgl_lv_obj_add_style(PikaObj *self, PikaObj* style, int selector);
 void pika_lvgl_lv_obj_align(PikaObj *self, int align, int x_ofs, int y_ofs);
 void pika_lvgl_lv_obj_align_to(PikaObj *self, PikaObj* base, int align, int x_ofs, int y_ofs);
 void pika_lvgl_lv_obj_center(PikaObj *self);
+void pika_lvgl_lv_obj_clean(PikaObj *self);
 void pika_lvgl_lv_obj_clear_flag(PikaObj *self, int flag);
 int pika_lvgl_lv_obj_get_content_height(PikaObj *self);
 int pika_lvgl_lv_obj_get_content_width(PikaObj *self);

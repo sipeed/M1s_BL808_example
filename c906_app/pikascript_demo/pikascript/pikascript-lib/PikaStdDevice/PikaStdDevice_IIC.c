@@ -1,6 +1,6 @@
 #include "PikaStdDevice_IIC.h"
-#include "BaseObj.h"
-#include "PikaObj.h"
+#include "PikaStdDevice_common.h"
+
 void PikaStdDevice_IIC_init(PikaObj* self) {
     obj_setInt(self, "deviceAddr", 0);
     obj_setStr(self, "SCLpin", "PA0");

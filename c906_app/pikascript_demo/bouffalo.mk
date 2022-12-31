@@ -5,7 +5,7 @@ COMPONENT_ADD_INCLUDEDIRS += . \
 COMPONENT_SRCS := 
 
 CFLAGS += -DPIKASCRIPT -DPIKA_CONFIG_ENABLE -DCONFIG_SYS_VFS_ENABLE=1 \
-          -DLFS_YES_TRACE
+          -DLFS_YES_TRACE -Wno-format -DBL808=1
 
 COMPONENT_OBJS := $(patsubst %.c,%.o, $(COMPONENT_SRCS))
 
@@ -15,4 +15,4 @@ COMPONENT_SRCDIRS := . \
 					 pikascript/pikascript-lib/pika_lvgl \
 					 pikascript/pikascript-lib/PikaStdLib \
 					 pikascript/pikascript-lib/PikaStdDevice \
-					 pikascript/pikascript-lib/BL808
+					 pikascript/pikascript-lib/BLIOT

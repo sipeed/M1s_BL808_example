@@ -331,6 +331,19 @@
     #ifndef PIKA_SHELL_SAVE_FILE_NAME
         #define PIKA_SHELL_SAVE_FILE_NAME "pika_shell_save.py"
     #endif
+
+    #ifndef PIKA_EVENT_LIST_SIZE
+        #define PIKA_EVENT_LIST_SIZE 16
+    #endif
+        
+    #ifndef PIKA_BYTECODE_ONLY_ENABLE
+        #define PIKA_BYTECODE_ONLY_ENABLE 0
+    #endif
+
+    #ifndef PIKA_OLD_API_ENABLE
+        #define PIKA_OLD_API_ENABLE 1
+    #endif
+
     /* configuration validation */
 
 #endif

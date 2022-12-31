@@ -17,9 +17,10 @@ volatile PikaObj *__pikaMain;
 PikaObj *pikaScriptInit(void){
     __platform_printf("======[pikascript packages installed]======\r\n");
     pks_printVersion();
-    __platform_printf("PikaStdDevice==v1.11.2\r\n");
+    __platform_printf("BLIOT==latest\r\n");
+    __platform_printf("PikaStdDevice==latest\r\n");
     __platform_printf("PikaStdLib==latest\r\n");
-    __platform_printf("pika_lvgl==v0.4.0\r\n");
+    __platform_printf("pika_lvgl==latest\r\n");
     __platform_printf("===========================================\r\n");
     PikaObj* pikaMain = newRootObj("pikaMain", New_PikaMain);
     __pikaMain = pikaMain;
@@ -29,7 +30,7 @@ PikaObj *pikaScriptInit(void){
     obj_run(pikaMain,
             "from PikaStdLib import MemChecker as mem\n"
             "import pika_lvgl as lv\n"
-            "import BL808\n"
+            "import BLIOT\n"
             "print('mem used max')\n"
             "mem.max()\n"
             "\n");

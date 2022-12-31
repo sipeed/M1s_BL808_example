@@ -19,7 +19,7 @@ PikaObj *New_PikaStdData_FILEIO(Args *args);
 
 void PikaStdData_FILEIO_close(PikaObj *self);
 int PikaStdData_FILEIO_init(PikaObj *self, char* path, char* mode);
-Arg* PikaStdData_FILEIO_read(PikaObj *self, int size);
+Arg* PikaStdData_FILEIO_read(PikaObj *self, PikaTuple* size);
 char* PikaStdData_FILEIO_readline(PikaObj *self);
 PikaObj* PikaStdData_FILEIO_readlines(PikaObj *self);
 int PikaStdData_FILEIO_seek(PikaObj *self, int offset, PikaTuple* fromwhere);

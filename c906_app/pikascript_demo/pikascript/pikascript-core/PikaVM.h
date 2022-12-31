@@ -72,7 +72,7 @@ struct VMState {
     int32_t pc;
     ByteCodeFrame* bytecode_frame;
     uint8_t loop_deepth;
-    uint8_t error_code;
+    int8_t error_code;
     uint8_t line_error_code;
     uint8_t try_error_code;
     uint32_t ins_cnt;
@@ -82,6 +82,25 @@ struct VMState {
     PIKA_BOOL ireg[PIKA_REGIST_SIZE];
     RunState* run_state;
 };
+
+typedef struct {
+    int8_t n_positional;
+    int8_t n_positional_got;
+    int8_t n_default;
+    int8_t n_arg;
+    int8_t i_arg;
+    int8_t n_input;
+    PIKA_BOOL is_vars;
+    PIKA_BOOL is_keys;
+    PIKA_BOOL is_default;
+    ArgType method_type;
+    PikaTuple* tuple;
+    PikaDict* kw;
+    PikaDict* kw_keys;
+    char* var_tuple_name;
+    char* kw_dict_name;
+    char* type_list;
+} FunctionArgsInfo;
 
 typedef struct OperatorInfo OperatorInfo;
 struct OperatorInfo {
@@ -104,10 +123,22 @@ typedef enum VM_SIGNAL_CTRL {
     VM_SIGNAL_CTRL_EXIT,
 } VM_SIGNAL_CTRL;
 
+typedef struct EventCQ {
+    uint32_t id[PIKA_EVENT_LIST_SIZE];
+    Arg* data[PIKA_EVENT_LIST_SIZE];
+    PikaEventListener* lisener[PIKA_EVENT_LIST_SIZE];
+    Arg* res[PIKA_EVENT_LIST_SIZE];
+    int head;
+    int tail;
+} EventCQ;
+
 typedef struct VMSignal VMSignal;
 struct VMSignal {
     VM_SIGNAL_CTRL signal_ctrl;
     int vm_cnt;
+#if PIKA_EVENT_ENABLE
+    EventCQ cq;
+#endif
 };
 
 VMParameters* pikaVM_run(PikaObj* self, char* pyLine);
@@ -115,37 +146,45 @@ VMParameters* pikaVM_runAsm(PikaObj* self, char* pikaAsm);
 VMParameters* pikaVM_runByteCodeFrame(PikaObj* self,
                                       ByteCodeFrame* byteCode_frame);
 
-#define instructUnit_getBlockDeepth(self) (((self)->deepth) & 0x0F)
-#define instructUnit_getInvokeDeepth(self) (((self)->deepth) >> 4)
-#define instructUnit_getInstruct(self) \
-    ((enum Instruct)((self)->isNewLine_instruct & 0x7F))
-#define instructUnit_getConstPoolIndex(self) ((self)->const_pool_index)
-#define instructUnit_getIsNewLine(self) ((self)->isNewLine_instruct >> 7)
+static inline int instructUnit_getBlockDeepth(InstructUnit* self) {
+    return self->deepth & 0x0F;
+}
 
-#define instructUnit_setBlockDeepth(self, val) \
-    do {                                       \
-        ((self)->deepth) |= (0x0F & (val));    \
-    } while (0)
+static inline int instructUnit_getInvokeDeepth(InstructUnit* self) {
+    return self->deepth >> 4;
+}
 
-#define instructUnit_setConstPoolIndex(self, val) \
-    do {                                          \
-        ((self)->const_pool_index = (val));       \
-    } while (0)
+static inline enum Instruct instructUnit_getInstruct(InstructUnit* self) {
+    return (enum Instruct)(self->isNewLine_instruct & 0x7F);
+}
 
-#define instructUnit_setInvokeDeepth(self, val)    \
-    do {                                           \
-        ((self)->deepth) |= ((0x0F & (val)) << 4); \
-    } while (0)
+static inline int instructUnit_getConstPoolIndex(InstructUnit* self) {
+    return self->const_pool_index;
+}
 
-#define instructUnit_setInstruct(self, val)             \
-    do {                                                \
-        ((self)->isNewLine_instruct) |= (0x7F & (val)); \
-    } while (0)
+static inline int instructUnit_getIsNewLine(InstructUnit* self) {
+    return self->isNewLine_instruct >> 7;
+}
 
-#define instructUnit_setIsNewLine(self, val)                   \
-    do {                                                       \
-        ((self)->isNewLine_instruct) |= ((0x01 & (val)) << 7); \
-    } while (0)
+static inline void instructUnit_setBlockDeepth(InstructUnit* self, int val) {
+    self->deepth |= (0x0F & val);
+}
+
+static inline void instructUnit_setConstPoolIndex(InstructUnit* self, int val) {
+    self->const_pool_index = val;
+}
+
+static inline void instructUnit_setInvokeDeepth(InstructUnit* self, int val) {
+    self->deepth |= ((0x0F & val) << 4);
+}
+
+static inline void instructUnit_setInstruct(InstructUnit* self, int val) {
+    self->isNewLine_instruct |= (0x7F & val);
+}
+
+static inline void instructUnit_setIsNewLine(InstructUnit* self, int val) {
+    self->isNewLine_instruct |= ((0x01 & val) << 7);
+}
 
 InstructUnit* New_instructUnit(uint8_t data_size);
 void instructUnit_deinit(InstructUnit* self);
@@ -156,14 +195,23 @@ void constPool_init(ConstPool* self);
 void constPool_deinit(ConstPool* self);
 void constPool_append(ConstPool* self, char* content);
 
-#define constPool_getStart(self) ((self)->content_start)
-#define constPool_getLastOffset(self) ((self)->size)
-#define constPool_getByOffset(self, offset) \
-    (char*)((uintptr_t)constPool_getStart((self)) + (uintptr_t)(offset))
+static inline void* constPool_getStart(ConstPool* self) {
+    return self->content_start;
+}
 
-#define VMState_getConstWithInstructUnit(__vm, __ins_unit)        \
-    (constPool_getByOffset(&((__vm)->bytecode_frame->const_pool), \
-                           instructUnit_getConstPoolIndex(__ins_unit)))
+static inline int constPool_getLastOffset(ConstPool* self) {
+    return self->size;
+}
+
+static inline char* constPool_getByOffset(ConstPool* self, int offset) {
+    return (char*)((uintptr_t)constPool_getStart(self) + (uintptr_t)offset);
+}
+
+static inline char* VMState_getConstWithInstructUnit(VMState* vm,
+                                                     InstructUnit* ins_unit) {
+    return constPool_getByOffset(&(vm->bytecode_frame->const_pool),
+                                 instructUnit_getConstPoolIndex(ins_unit));
+}
 
 char* constPool_getNow(ConstPool* self);
 char* constPool_getNext(ConstPool* self);
@@ -181,30 +229,40 @@ void instructUnit_init(InstructUnit* ins_unit);
 void instructUnit_print(InstructUnit* self);
 void instructArray_print(InstructArray* self);
 
-#define instructArray_getStart(InsturctArry_p_self) \
-    ((InsturctArry_p_self)->content_start)
+static inline InstructUnit* instructArray_getStart(InstructArray* self) {
+    return (InstructUnit*)self->content_start;
+}
 
-#define instructArray_getSize(InsturctArry_p_self) \
-    ((size_t)(InsturctArry_p_self)->size)
+static inline size_t instructArray_getSize(InstructArray* self) {
+    return (size_t)self->size;
+}
 
-#define VMState_getInstructArraySize(vm) \
-    (instructArray_getSize(&((vm)->bytecode_frame->instruct_array)))
+static inline int VMState_getInstructArraySize(VMState* vm) {
+    return instructArray_getSize(&(vm->bytecode_frame->instruct_array));
+}
 
-#define instructArray_getByOffset(__self, __offset)                \
-    ((InstructUnit*)((uintptr_t)instructArray_getStart((__self)) + \
-                     (uintptr_t)(__offset)))
+static inline InstructUnit* instructArray_getByOffset(InstructArray* self,
+                                                      int offset) {
+    return (InstructUnit*)((uintptr_t)instructArray_getStart(self) +
+                           (uintptr_t)offset);
+}
 
-#define VMState_getInstructUnitWithOffset(vm, offset)                   \
-    (instructArray_getByOffset(&((vm)->bytecode_frame->instruct_array), \
-                               (vm)->pc + (offset)))
+static inline InstructUnit* VMState_getInstructUnitWithOffset(VMState* vm,
+                                                              int offset) {
+    return instructArray_getByOffset(&(vm->bytecode_frame->instruct_array),
+                                     vm->pc + offset);
+}
 
-#define VMState_getInstructNow(vm)                                      \
-    (instructArray_getByOffset(&((vm)->bytecode_frame->instruct_array), \
-                               (vm)->pc))
+static inline InstructUnit* VMState_getInstructNow(VMState* vm) {
+    return instructArray_getByOffset(&(vm->bytecode_frame->instruct_array),
+                                     vm->pc);
+}
 
 void byteCodeFrame_print(ByteCodeFrame* self);
 
-#define instructUnit_getSize(InstructUnit_p_self) ((size_t)sizeof(InstructUnit))
+static inline size_t instructUnit_getSize(void) {
+    return (size_t)sizeof(InstructUnit);
+}
 
 uint16_t constPool_getOffsetByData(ConstPool* self, char* data);
 void instructArray_printWithConst(InstructArray* self, ConstPool* const_pool);
@@ -215,14 +273,30 @@ void instructArray_printAsArray(InstructArray* self);
 void byteCodeFrame_loadByteCode(ByteCodeFrame* self, uint8_t* bytes);
 void byteCodeFrame_printAsArray(ByteCodeFrame* self);
 void byteCodeFrame_init(ByteCodeFrame* self);
-VMParameters* pikaVM_runByteCode(PikaObj* self, uint8_t* bytecode);
+VMParameters* pikaVM_runByteCode(PikaObj* self, const uint8_t* bytecode);
+VMParameters* pikaVM_runByteCodeInconstant(PikaObj* self, uint8_t* bytecode);
 InstructUnit* instructArray_getNow(InstructArray* self);
 InstructUnit* instructArray_getNext(InstructArray* self);
 VMParameters* pikaVM_runSingleFile(PikaObj* self, char* filename);
+VMParameters* pikaVM_runByteCodeFile(PikaObj* self, char* filename);
 Arg* obj_runMethodArg(PikaObj* self, PikaObj* method_args_obj, Arg* method_arg);
 PikaObj* pikaVM_runFile(PikaObj* self, char* file_name);
-Arg* __vm_slice(PikaObj* self, Arg* end, Arg* obj, Arg* start, int step);
-Arg* __vm_get(PikaObj* self, Arg* key, Arg* obj);
+Arg* _vm_slice(VMState* vm,
+               PikaObj* self,
+               Arg* end,
+               Arg* obj,
+               Arg* start,
+               int step);
+VMParameters* _do_pikaVM_runByteCode(PikaObj* self,
+                                     VMParameters* locals,
+                                     VMParameters* globals,
+                                     uint8_t* bytecode,
+                                     RunState* run_state,
+                                     PIKA_BOOL is_const_bytecode);
+void _do_byteCodeFrame_loadByteCode(ByteCodeFrame* self,
+                                    uint8_t* bytes,
+                                    PIKA_BOOL is_const);
+Arg* __vm_get(VMState* vm, PikaObj* self, Arg* key, Arg* obj);
 void __vm_List_append(PikaObj* self, Arg* arg);
 void __vm_List___init__(PikaObj* self);
 void __vm_Dict_set(PikaObj* self, Arg* arg, char* key);
@@ -230,5 +304,13 @@ void __vm_Dict___init__(PikaObj* self);
 VM_SIGNAL_CTRL VMSignal_getCtrl(void);
 void pks_vm_exit(void);
 void pks_vmSignal_setCtrlElear(void);
-
+PIKA_RES __eventListener_popEvent(PikaEventListener** lisener_p,
+                                  uint32_t* id,
+                                  Arg** signal,
+                                  int* head);
+PIKA_RES __eventListener_pushEvent(PikaEventListener* lisener,
+                                   uint32_t eventId,
+                                   Arg* eventData);
+int _VMEvent_getVMCnt(void);
+void _VMEvent_pickupEvent(void);
 #endif

@@ -20,6 +20,7 @@ PikaObj *New_PikaStdDevice(Args *args);
 Arg* PikaStdDevice_ADC(PikaObj *self);
 Arg* PikaStdDevice_BaseDev(PikaObj *self);
 Arg* PikaStdDevice_CAN(PikaObj *self);
+Arg* PikaStdDevice_DAC(PikaObj *self);
 Arg* PikaStdDevice_GPIO(PikaObj *self);
 Arg* PikaStdDevice_IIC(PikaObj *self);
 Arg* PikaStdDevice_PWM(PikaObj *self);

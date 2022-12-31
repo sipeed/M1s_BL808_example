@@ -19,7 +19,6 @@ PikaObj *New_PikaStdLib_SysObj(Args *args);
 
 Arg* PikaStdLib_SysObj___getitem__(PikaObj *self, Arg* obj, Arg* key);
 Arg* PikaStdLib_SysObj___setitem__(PikaObj *self, Arg* obj, Arg* key, Arg* val);
-Arg* PikaStdLib_SysObj___slice__(PikaObj *self, Arg* obj, Arg* start, Arg* end, int step);
 Arg* PikaStdLib_SysObj_bytes(PikaObj *self, Arg* val);
 char* PikaStdLib_SysObj_cformat(PikaObj *self, char* fmt, PikaTuple* var);
 char* PikaStdLib_SysObj_chr(PikaObj *self, int val);
@@ -31,6 +30,7 @@ void PikaStdLib_SysObj_exit(PikaObj *self);
 pika_float PikaStdLib_SysObj_float(PikaObj *self, Arg* arg);
 Arg* PikaStdLib_SysObj_getattr(PikaObj *self, PikaObj* obj, char* name);
 int PikaStdLib_SysObj_hasattr(PikaObj *self, PikaObj* obj, char* name);
+void PikaStdLib_SysObj_help(PikaObj *self, char* name);
 char* PikaStdLib_SysObj_hex(PikaObj *self, int val);
 int PikaStdLib_SysObj_id(PikaObj *self, Arg* obj);
 char* PikaStdLib_SysObj_input(PikaObj *self, PikaTuple* info);

@@ -91,6 +91,7 @@ char* strAppendWithSize(char* strOut, char* pData, int32_t Size) {
 }
 
 int32_t strCountSign(char* strIn, char sign) {
+    pika_assert(NULL != strIn);
     int count = 0;
     while (*strIn) {
         if (*strIn == sign) {
@@ -99,6 +100,16 @@ int32_t strCountSign(char* strIn, char sign) {
         strIn++;
     }
     return count;
+}
+
+char* strReplaceChar(char* strIn, char src, char dst) {
+    while (*strIn) {
+        if (*strIn == src) {
+            *strIn = dst;
+        }
+        strIn++;
+    }
+    return strIn;
 }
 
 int32_t strGetTokenNum(char* strIn, char sign) {
@@ -231,7 +242,7 @@ int32_t strIsContain(char* str, char ch) {
 }
 
 char* strCopy(char* strBuff, char* strIn) {
-    __platform_memcpy(strBuff, strIn, strGetSize(strIn) + 1);
+    pika_platform_memcpy(strBuff, strIn, strGetSize(strIn) + 1);
     return strBuff;
 }
 
@@ -247,7 +258,7 @@ int32_t strGetLineSize(char* str) {
 
 char* strGetLine(char* strOut, char* strIn) {
     int32_t lineSize = strGetLineSize(strIn);
-    __platform_memcpy(strOut, strIn, lineSize);
+    pika_platform_memcpy(strOut, strIn, lineSize);
     strOut[lineSize] = 0;
     return strOut;
 }
@@ -265,7 +276,7 @@ char* strGetLastLine(char* strOut, char* strIn) {
         }
     }
 
-    __platform_memcpy(strOut, strIn + beginIndex, size - beginIndex);
+    pika_platform_memcpy(strOut, strIn + beginIndex, size - beginIndex);
     strOut[size - beginIndex + 1] = 0;
     return strOut;
 }

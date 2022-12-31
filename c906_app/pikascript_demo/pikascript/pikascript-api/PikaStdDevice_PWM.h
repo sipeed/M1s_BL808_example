@@ -18,6 +18,7 @@
 PikaObj *New_PikaStdDevice_PWM(Args *args);
 
 void PikaStdDevice_PWM___init__(PikaObj *self);
+void PikaStdDevice_PWM_close(PikaObj *self);
 void PikaStdDevice_PWM_disable(PikaObj *self);
 void PikaStdDevice_PWM_enable(PikaObj *self);
 int PikaStdDevice_PWM_getChannel(PikaObj *self);

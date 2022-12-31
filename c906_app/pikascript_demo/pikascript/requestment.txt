@@ -1,4 +1,5 @@
 pikascript-core==latest
 PikaStdLib==latest
-pika_lvgl==v0.4.0
-PikaStdDevice==v1.11.2
+pika_lvgl==latest
+PikaStdDevice==latest
+BLIOT==latest

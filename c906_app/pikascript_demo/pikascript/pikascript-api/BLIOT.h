@@ -9,19 +9,13 @@
  * https://pikadoc.readthedocs.io/zh/latest/PikaScript%20%E6%A8%A1%E5%9D%97%E6%A6%82%E8%BF%B0.html
  */
 
-#ifndef __BL808_GPIO__H
-#define __BL808_GPIO__H
+#ifndef __BLIOT__H
+#define __BLIOT__H
 #include <stdio.h>
 #include <stdlib.h>
 #include "PikaObj.h"
 
-PikaObj *New_BL808_GPIO(Args *args);
+PikaObj *New_BLIOT(Args *args);
 
-void BL808_GPIO_platformDisable(PikaObj *self);
-void BL808_GPIO_platformEnable(PikaObj *self);
-void BL808_GPIO_platformHigh(PikaObj *self);
-void BL808_GPIO_platformLow(PikaObj *self);
-void BL808_GPIO_platformRead(PikaObj *self);
-void BL808_GPIO_platformSetMode(PikaObj *self);
 
 #endif

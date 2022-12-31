@@ -9,15 +9,19 @@
  * https://pikadoc.readthedocs.io/zh/latest/PikaScript%20%E6%A8%A1%E5%9D%97%E6%A6%82%E8%BF%B0.html
  */
 
-#ifndef __BL808__H
-#define __BL808__H
+#ifndef __PikaStdDevice_DAC__H
+#define __PikaStdDevice_DAC__H
 #include <stdio.h>
 #include <stdlib.h>
 #include "PikaObj.h"
 
-PikaObj *New_BL808(Args *args);
+PikaObj *New_PikaStdDevice_DAC(Args *args);
 
-Arg* BL808_GPIO(PikaObj *self);
-Arg* BL808_Time(PikaObj *self);
+void PikaStdDevice_DAC___init__(PikaObj *self);
+void PikaStdDevice_DAC_close(PikaObj *self);
+void PikaStdDevice_DAC_disable(PikaObj *self);
+void PikaStdDevice_DAC_enable(PikaObj *self);
+void PikaStdDevice_DAC_setPin(PikaObj *self, char* pin);
+void PikaStdDevice_DAC_write(PikaObj *self, pika_float val);
 
 #endif

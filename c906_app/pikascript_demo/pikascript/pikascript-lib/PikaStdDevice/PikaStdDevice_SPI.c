@@ -1,6 +1,6 @@
 #include "PikaStdDevice_SPI.h"
-#include "BaseObj.h"
-#include "PikaObj.h"
+#include "PikaStdDevice_common.h"
+
 void PikaStdDevice_SPI___init__(PikaObj* self) {
     obj_setInt(self, "baudRate", 1000);
     obj_setInt(self, "id", 0);

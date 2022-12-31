@@ -12,19 +12,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "BaseObj.h"
-#include "BL808.h"
+#include "BLIOT.h"
 #include "TinyObj.h"
-#include "BL808_GPIO.h"
-#include "PikaStdDevice_GPIO.h"
-#include "BL808_Time.h"
-#include "PikaStdDevice_Time.h"
 #include "PikaDebug.h"
 #include "TinyObj.h"
 #include "PikaDebug_Debuger.h"
 #include "TinyObj.h"
 #include "PikaMain.h"
 #include "PikaStdLib_SysObj.h"
-#include "BL808.h"
+#include "BLIOT.h"
 #include "PikaStdLib.h"
 #include "pika_lvgl.h"
 #include "PikaStdData.h"
@@ -55,6 +51,8 @@
 #include "TinyObj.h"
 #include "PikaStdDevice_CAN.h"
 #include "PikaStdDevice_BaseDev.h"
+#include "PikaStdDevice_DAC.h"
+#include "PikaStdDevice_BaseDev.h"
 #include "PikaStdDevice_GPIO.h"
 #include "PikaStdDevice_BaseDev.h"
 #include "PikaStdDevice_IIC.h"
@@ -66,7 +64,7 @@
 #include "PikaStdDevice_Time.h"
 #include "PikaStdDevice_BaseDev.h"
 #include "PikaStdDevice_UART.h"
-#include "PikaStdDevice_BaseDev.h"
+#include "TinyObj.h"
 #include "PikaStdLib.h"
 #include "TinyObj.h"
 #include "PikaStdLib_MemChecker.h"
@@ -151,144 +149,16 @@
 #include "pika_lvgl_textarea.h"
 #include "pika_lvgl_lv_obj.h"
 
-#ifndef PIKA_MODULE_BL808_DISABLE
-void BL808_GPIOMethod(PikaObj *self, Args *args){
-    Arg* res = BL808_GPIO(self);
-    method_returnArg(args, res);
-}
-method_typedef(
-    BL808_GPIO,
-    "GPIO", ""
-);
-
-void BL808_TimeMethod(PikaObj *self, Args *args){
-    Arg* res = BL808_Time(self);
-    method_returnArg(args, res);
-}
-method_typedef(
-    BL808_Time,
-    "Time", ""
-);
-
-class_def(BL808){
+#ifndef PIKA_MODULE_BLIOT_DISABLE
+class_def(BLIOT){
     __BEFORE_MOETHOD_DEF
-    constructor_def(BL808_GPIO, 2089114740),
-    constructor_def(BL808_Time, 2089610356),
 };
-class_inhert(BL808, TinyObj);
+class_inhert(BLIOT, TinyObj);
 
-PikaObj *New_BL808(Args *args){
+PikaObj *New_BLIOT(Args *args){
     PikaObj *self = New_TinyObj(args);
-    obj_setClass(self, BL808);
+    obj_setClass(self, BLIOT);
     return self;
-}
-#endif
-
-#ifndef PIKA_MODULE_BL808_DISABLE
-void BL808_GPIO_platformDisableMethod(PikaObj *self, Args *args){
-    BL808_GPIO_platformDisable(self);
-}
-method_typedef(
-    BL808_GPIO_platformDisable,
-    "platformDisable", ""
-);
-
-void BL808_GPIO_platformEnableMethod(PikaObj *self, Args *args){
-    BL808_GPIO_platformEnable(self);
-}
-method_typedef(
-    BL808_GPIO_platformEnable,
-    "platformEnable", ""
-);
-
-void BL808_GPIO_platformHighMethod(PikaObj *self, Args *args){
-    BL808_GPIO_platformHigh(self);
-}
-method_typedef(
-    BL808_GPIO_platformHigh,
-    "platformHigh", ""
-);
-
-void BL808_GPIO_platformLowMethod(PikaObj *self, Args *args){
-    BL808_GPIO_platformLow(self);
-}
-method_typedef(
-    BL808_GPIO_platformLow,
-    "platformLow", ""
-);
-
-void BL808_GPIO_platformReadMethod(PikaObj *self, Args *args){
-    BL808_GPIO_platformRead(self);
-}
-method_typedef(
-    BL808_GPIO_platformRead,
-    "platformRead", ""
-);
-
-void BL808_GPIO_platformSetModeMethod(PikaObj *self, Args *args){
-    BL808_GPIO_platformSetMode(self);
-}
-method_typedef(
-    BL808_GPIO_platformSetMode,
-    "platformSetMode", ""
-);
-
-class_def(BL808_GPIO){
-    __BEFORE_MOETHOD_DEF
-    method_def(BL808_GPIO_platformSetMode, 215449403),
-    method_def(BL808_GPIO_platformDisable, 326843198),
-    method_def(BL808_GPIO_platformEnable, 835227025),
-    method_def(BL808_GPIO_platformLow, 1616275740),
-    method_def(BL808_GPIO_platformHigh, 1797341162),
-    method_def(BL808_GPIO_platformRead, 1797695974),
-};
-class_inhert(BL808_GPIO, PikaStdDevice_GPIO);
-
-PikaObj *New_BL808_GPIO(Args *args){
-    PikaObj *self = New_PikaStdDevice_GPIO(args);
-    obj_setClass(self, BL808_GPIO);
-    return self;
-}
-
-Arg *BL808_GPIO(PikaObj *self){
-    return obj_newObjInPackage(New_BL808_GPIO);
-}
-#endif
-
-#ifndef PIKA_MODULE_BL808_DISABLE
-void BL808_Time_sleep_msMethod(PikaObj *self, Args *args){
-    int ms = args_getInt(args, "ms");
-    BL808_Time_sleep_ms(self, ms);
-}
-method_typedef(
-    BL808_Time_sleep_ms,
-    "sleep_ms", "ms"
-);
-
-void BL808_Time_sleep_sMethod(PikaObj *self, Args *args){
-    int s = args_getInt(args, "s");
-    BL808_Time_sleep_s(self, s);
-}
-method_typedef(
-    BL808_Time_sleep_s,
-    "sleep_s", "s"
-);
-
-class_def(BL808_Time){
-    __BEFORE_MOETHOD_DEF
-    method_def(BL808_Time_sleep_ms, 164842493),
-    method_def(BL808_Time_sleep_s, 460522064),
-};
-class_inhert(BL808_Time, PikaStdDevice_Time);
-
-PikaObj *New_BL808_Time(Args *args){
-    PikaObj *self = New_PikaStdDevice_Time(args);
-    obj_setClass(self, BL808_Time);
-    return self;
-}
-
-Arg *BL808_Time(PikaObj *self){
-    return obj_newObjInPackage(New_BL808_Time);
 }
 #endif
 
@@ -358,7 +228,7 @@ class_inhert(PikaMain, PikaStdLib_SysObj);
 
 PikaObj *New_PikaMain(Args *args){
     PikaObj *self = New_PikaStdLib_SysObj(args);
-    obj_newObj(self, "BL808", "BL808", New_BL808);
+    obj_newObj(self, "BLIOT", "BLIOT", New_BLIOT);
     obj_newObj(self, "PikaStdLib", "PikaStdLib", New_PikaStdLib);
     obj_newObj(self, "pika_lvgl", "pika_lvgl", New_pika_lvgl);
     obj_setClass(self, PikaMain);
@@ -753,13 +623,13 @@ method_typedef(
 );
 
 void PikaStdData_FILEIO_readMethod(PikaObj *self, Args *args){
-    int size = args_getInt(args, "size");
+    PikaTuple* size = args_getTuple(args, "size");
     Arg* res = PikaStdData_FILEIO_read(self, size);
     method_returnArg(args, res);
 }
 method_typedef(
     PikaStdData_FILEIO_read,
-    "read", "size"
+    "read", "*size"
 );
 
 void PikaStdData_FILEIO_readlineMethod(PikaObj *self, Args *args){
@@ -1049,6 +919,16 @@ method_typedef(
     "endswith", "suffix"
 );
 
+void PikaStdData_String_formatMethod(PikaObj *self, Args *args){
+    PikaTuple* vars = args_getTuple(args, "vars");
+    char* res = PikaStdData_String_format(self, vars);
+    method_returnStr(args, res);
+}
+method_typedef(
+    PikaStdData_String_format,
+    "format", "*vars"
+);
+
 void PikaStdData_String_getMethod(PikaObj *self, Args *args){
     char* res = PikaStdData_String_get(self);
     method_returnStr(args, res);
@@ -1175,6 +1055,7 @@ class_def(PikaStdData_String){
     method_def(PikaStdData_String___len__, 2047989248),
     method_def(PikaStdData_String___str__, 2056834106),
     method_def(PikaStdData_String_encode, 2071380659),
+    method_def(PikaStdData_String_format, 2112238766),
 };
 class_inhert(PikaStdData_String, TinyObj);
 
@@ -1477,6 +1358,15 @@ method_typedef(
     "CAN", ""
 );
 
+void PikaStdDevice_DACMethod(PikaObj *self, Args *args){
+    Arg* res = PikaStdDevice_DAC(self);
+    method_returnArg(args, res);
+}
+method_typedef(
+    PikaStdDevice_DAC,
+    "DAC", ""
+);
+
 void PikaStdDevice_GPIOMethod(PikaObj *self, Args *args){
     Arg* res = PikaStdDevice_GPIO(self);
     method_returnArg(args, res);
@@ -1535,6 +1425,7 @@ class_def(PikaStdDevice){
     __BEFORE_MOETHOD_DEF
     constructor_def(PikaStdDevice_ADC, 193450093),
     constructor_def(PikaStdDevice_CAN, 193452183),
+    constructor_def(PikaStdDevice_DAC, 193453261),
     constructor_def(PikaStdDevice_IIC, 193458970),
     constructor_def(PikaStdDevice_PWM, 193467065),
     constructor_def(PikaStdDevice_SPI, 193470097),
@@ -1559,6 +1450,14 @@ void PikaStdDevice_ADC___init__Method(PikaObj *self, Args *args){
 method_typedef(
     PikaStdDevice_ADC___init__,
     "__init__", ""
+);
+
+void PikaStdDevice_ADC_closeMethod(PikaObj *self, Args *args){
+    PikaStdDevice_ADC_close(self);
+}
+method_typedef(
+    PikaStdDevice_ADC_close,
+    "close", ""
 );
 
 void PikaStdDevice_ADC_disableMethod(PikaObj *self, Args *args){
@@ -1621,6 +1520,7 @@ method_typedef(
 
 class_def(PikaStdDevice_ADC){
     __BEFORE_MOETHOD_DEF
+    method_def(PikaStdDevice_ADC_close, 255564379),
     method_def(PikaStdDevice_ADC_disable, 314893497),
     method_def(PikaStdDevice_ADC_platformDisable, 326843198),
     method_def(PikaStdDevice_ADC_setPin, 461696568),
@@ -1880,12 +1780,93 @@ Arg *PikaStdDevice_CAN(PikaObj *self){
 #endif
 
 #ifndef PIKA_MODULE_PIKASTDDEVICE_DISABLE
+void PikaStdDevice_DAC___init__Method(PikaObj *self, Args *args){
+    PikaStdDevice_DAC___init__(self);
+}
+method_typedef(
+    PikaStdDevice_DAC___init__,
+    "__init__", ""
+);
+
+void PikaStdDevice_DAC_closeMethod(PikaObj *self, Args *args){
+    PikaStdDevice_DAC_close(self);
+}
+method_typedef(
+    PikaStdDevice_DAC_close,
+    "close", ""
+);
+
+void PikaStdDevice_DAC_disableMethod(PikaObj *self, Args *args){
+    PikaStdDevice_DAC_disable(self);
+}
+method_typedef(
+    PikaStdDevice_DAC_disable,
+    "disable", ""
+);
+
+void PikaStdDevice_DAC_enableMethod(PikaObj *self, Args *args){
+    PikaStdDevice_DAC_enable(self);
+}
+method_typedef(
+    PikaStdDevice_DAC_enable,
+    "enable", ""
+);
+
+void PikaStdDevice_DAC_setPinMethod(PikaObj *self, Args *args){
+    char* pin = args_getStr(args, "pin");
+    PikaStdDevice_DAC_setPin(self, pin);
+}
+method_typedef(
+    PikaStdDevice_DAC_setPin,
+    "setPin", "pin"
+);
+
+void PikaStdDevice_DAC_writeMethod(PikaObj *self, Args *args){
+    pika_float val = args_getFloat(args, "val");
+    PikaStdDevice_DAC_write(self, val);
+}
+method_typedef(
+    PikaStdDevice_DAC_write,
+    "write", "val"
+);
+
+class_def(PikaStdDevice_DAC){
+    __BEFORE_MOETHOD_DEF
+    method_def(PikaStdDevice_DAC_close, 255564379),
+    method_def(PikaStdDevice_DAC_write, 279491920),
+    method_def(PikaStdDevice_DAC_disable, 314893497),
+    method_def(PikaStdDevice_DAC_setPin, 461696568),
+    method_def(PikaStdDevice_DAC___init__, 904762485),
+    method_def(PikaStdDevice_DAC_enable, 2071294892),
+};
+class_inhert(PikaStdDevice_DAC, PikaStdDevice_BaseDev);
+
+PikaObj *New_PikaStdDevice_DAC(Args *args){
+    PikaObj *self = New_PikaStdDevice_BaseDev(args);
+    obj_setClass(self, PikaStdDevice_DAC);
+    return self;
+}
+
+Arg *PikaStdDevice_DAC(PikaObj *self){
+    return obj_newObjInPackage(New_PikaStdDevice_DAC);
+}
+#endif
+
+#ifndef PIKA_MODULE_PIKASTDDEVICE_DISABLE
 void PikaStdDevice_GPIO___init__Method(PikaObj *self, Args *args){
     PikaStdDevice_GPIO___init__(self);
 }
 method_typedef(
     PikaStdDevice_GPIO___init__,
     "__init__", ""
+);
+
+void PikaStdDevice_GPIO_closeMethod(PikaObj *self, Args *args){
+    PikaStdDevice_GPIO_close(self);
+}
+method_typedef(
+    PikaStdDevice_GPIO_close,
+    "close", ""
 );
 
 void PikaStdDevice_GPIO_disableMethod(PikaObj *self, Args *args){
@@ -2004,6 +1985,16 @@ method_typedef(
     "read", ""
 );
 
+void PikaStdDevice_GPIO_setCallBackMethod(PikaObj *self, Args *args){
+    Arg* eventCallBack = args_getArg(args, "eventCallBack");
+    int filter = args_getInt(args, "filter");
+    PikaStdDevice_GPIO_setCallBack(self, eventCallBack, filter);
+}
+method_typedef(
+    PikaStdDevice_GPIO_setCallBack,
+    "setCallBack", "eventCallBack,filter"
+);
+
 void PikaStdDevice_GPIO_setIdMethod(PikaObj *self, Args *args){
     int id = args_getInt(args, "id");
     PikaStdDevice_GPIO_setId(self, id);
@@ -2046,6 +2037,7 @@ class_def(PikaStdDevice_GPIO){
     method_def(PikaStdDevice_GPIO_setMode, 203499702),
     method_def(PikaStdDevice_GPIO_setPull, 203614318),
     method_def(PikaStdDevice_GPIO_platformSetMode, 215449403),
+    method_def(PikaStdDevice_GPIO_close, 255564379),
     method_def(PikaStdDevice_GPIO_getId, 260060562),
     method_def(PikaStdDevice_GPIO_setId, 274291614),
     method_def(PikaStdDevice_GPIO_disable, 314893497),
@@ -2053,6 +2045,7 @@ class_def(PikaStdDevice_GPIO){
     method_def(PikaStdDevice_GPIO_setPin, 461696568),
     method_def(PikaStdDevice_GPIO_platformEnable, 835227025),
     method_def(PikaStdDevice_GPIO___init__, 904762485),
+    method_def(PikaStdDevice_GPIO_setCallBack, 945732542),
     method_def(PikaStdDevice_GPIO_platformLow, 1616275740),
     method_def(PikaStdDevice_GPIO_platformHigh, 1797341162),
     method_def(PikaStdDevice_GPIO_platformRead, 1797695974),
@@ -2259,6 +2252,14 @@ method_typedef(
     "__init__", ""
 );
 
+void PikaStdDevice_PWM_closeMethod(PikaObj *self, Args *args){
+    PikaStdDevice_PWM_close(self);
+}
+method_typedef(
+    PikaStdDevice_PWM_close,
+    "close", ""
+);
+
 void PikaStdDevice_PWM_disableMethod(PikaObj *self, Args *args){
     PikaStdDevice_PWM_disable(self);
 }
@@ -2403,6 +2404,7 @@ class_def(PikaStdDevice_PWM){
     method_def(PikaStdDevice_PWM_setFreq, 203251455),
     method_def(PikaStdDevice_PWM_setName, 203520690),
     method_def(PikaStdDevice_PWM_platformSetDuty, 215133052),
+    method_def(PikaStdDevice_PWM_close, 255564379),
     method_def(PikaStdDevice_PWM_disable, 314893497),
     method_def(PikaStdDevice_PWM_platformDisable, 326843198),
     method_def(PikaStdDevice_PWM_setPin, 461696568),
@@ -2810,6 +2812,14 @@ method_typedef(
     "__init__", ""
 );
 
+void PikaStdDevice_UART_closeMethod(PikaObj *self, Args *args){
+    PikaStdDevice_UART_close(self);
+}
+method_typedef(
+    PikaStdDevice_UART_close,
+    "close", ""
+);
+
 void PikaStdDevice_UART_disableMethod(PikaObj *self, Args *args){
     PikaStdDevice_UART_disable(self);
 }
@@ -2903,6 +2913,25 @@ method_typedef(
     "setBaudRate", "baudRate"
 );
 
+void PikaStdDevice_UART_setCallBackMethod(PikaObj *self, Args *args){
+    Arg* eventCallBack = args_getArg(args, "eventCallBack");
+    int filter = args_getInt(args, "filter");
+    PikaStdDevice_UART_setCallBack(self, eventCallBack, filter);
+}
+method_typedef(
+    PikaStdDevice_UART_setCallBack,
+    "setCallBack", "eventCallBack,filter"
+);
+
+void PikaStdDevice_UART_setFlowControlMethod(PikaObj *self, Args *args){
+    int flowControl = args_getInt(args, "flowControl");
+    PikaStdDevice_UART_setFlowControl(self, flowControl);
+}
+method_typedef(
+    PikaStdDevice_UART_setFlowControl,
+    "setFlowControl", "flowControl"
+);
+
 void PikaStdDevice_UART_setIdMethod(PikaObj *self, Args *args){
     int id = args_getInt(args, "id");
     PikaStdDevice_UART_setId(self, id);
@@ -2933,6 +2962,7 @@ method_typedef(
 
 class_def(PikaStdDevice_UART){
     __BEFORE_MOETHOD_DEF
+    method_def(PikaStdDevice_UART_close, 255564379),
     method_def(PikaStdDevice_UART_setId, 274291614),
     method_def(PikaStdDevice_UART_write, 279491920),
     method_def(PikaStdDevice_UART_disable, 314893497),
@@ -2943,16 +2973,18 @@ class_def(PikaStdDevice_UART){
     method_def(PikaStdDevice_UART_writeBytes, 787295575),
     method_def(PikaStdDevice_UART_platformEnable, 835227025),
     method_def(PikaStdDevice_UART___init__, 904762485),
+    method_def(PikaStdDevice_UART_setCallBack, 945732542),
     method_def(PikaStdDevice_UART_platformWrite, 1348314773),
+    method_def(PikaStdDevice_UART_setFlowControl, 1507149322),
     method_def(PikaStdDevice_UART_setBaudRate, 1620269241),
     method_def(PikaStdDevice_UART_platformRead, 1797695974),
     method_def(PikaStdDevice_UART_enable, 2071294892),
     method_def(PikaStdDevice_UART_read, 2090683713),
 };
-class_inhert(PikaStdDevice_UART, PikaStdDevice_BaseDev);
+class_inhert(PikaStdDevice_UART, TinyObj);
 
 PikaObj *New_PikaStdDevice_UART(Args *args){
-    PikaObj *self = New_PikaStdDevice_BaseDev(args);
+    PikaObj *self = New_TinyObj(args);
     obj_setClass(self, PikaStdDevice_UART);
     return self;
 }
@@ -3167,19 +3199,6 @@ method_typedef(
     "__setitem__", "obj,key,val"
 );
 
-void PikaStdLib_SysObj___slice__Method(PikaObj *self, Args *args){
-    Arg* obj = args_getArg(args, "obj");
-    Arg* start = args_getArg(args, "start");
-    Arg* end = args_getArg(args, "end");
-    int step = args_getInt(args, "step");
-    Arg* res = PikaStdLib_SysObj___slice__(self, obj, start, end, step);
-    method_returnArg(args, res);
-}
-method_typedef(
-    PikaStdLib_SysObj___slice__,
-    "__slice__", "obj,start,end,step"
-);
-
 void PikaStdLib_SysObj_bytesMethod(PikaObj *self, Args *args){
     Arg* val = args_getArg(args, "val");
     Arg* res = PikaStdLib_SysObj_bytes(self, val);
@@ -3288,6 +3307,15 @@ void PikaStdLib_SysObj_hasattrMethod(PikaObj *self, Args *args){
 method_typedef(
     PikaStdLib_SysObj_hasattr,
     "hasattr", "obj,name"
+);
+
+void PikaStdLib_SysObj_helpMethod(PikaObj *self, Args *args){
+    char* name = args_getStr(args, "name");
+    PikaStdLib_SysObj_help(self, name);
+}
+method_typedef(
+    PikaStdLib_SysObj_help,
+    "help", "name"
 );
 
 void PikaStdLib_SysObj_hexMethod(PikaObj *self, Args *args){
@@ -3476,9 +3504,6 @@ class_def(PikaStdLib_SysObj){
     method_def(PikaStdLib_SysObj_getattr, 1886477984),
 #endif
 #if PIKA_BUILTIN_STRUCT_ENABLE
-    method_def(PikaStdLib_SysObj___slice__, 1890777297),
-#endif
-#if PIKA_BUILTIN_STRUCT_ENABLE
     method_def(PikaStdLib_SysObj_dict, 2090185033),
 #endif
 #if PIKA_EXEC_ENABLE
@@ -3489,6 +3514,9 @@ class_def(PikaStdLib_SysObj){
 #endif
 #if !PIKA_NANO_ENABLE
     method_def(PikaStdLib_SysObj_exit, 2090237503),
+#endif
+#if !PIKA_NANO_ENABLE
+    method_def(PikaStdLib_SysObj_help, 2090324718),
 #endif
     method_def(PikaStdLib_SysObj_iter, 2090376761),
 #if PIKA_BUILTIN_STRUCT_ENABLE
@@ -5456,6 +5484,14 @@ method_typedef(
     "center", ""
 );
 
+void pika_lvgl_lv_obj_cleanMethod(PikaObj *self, Args *args){
+    pika_lvgl_lv_obj_clean(self);
+}
+method_typedef(
+    pika_lvgl_lv_obj_clean,
+    "clean", ""
+);
+
 void pika_lvgl_lv_obj_clear_flagMethod(PikaObj *self, Args *args){
     int flag = args_getInt(args, "flag");
     pika_lvgl_lv_obj_clear_flag(self, flag);
@@ -5841,6 +5877,7 @@ class_def(pika_lvgl_lv_obj){
     method_def(pika_lvgl_lv_obj_set_content_width, 137436842),
     method_def(pika_lvgl_lv_obj_set_pos, 204148034),
     method_def(pika_lvgl_lv_obj_align, 253185616),
+    method_def(pika_lvgl_lv_obj_clean, 255552904),
     method_def(pika_lvgl_lv_obj_get_x_aligned, 257001039),
     method_def(pika_lvgl_lv_obj_get_x, 260061308),
     method_def(pika_lvgl_lv_obj_get_y, 260061309),
