@@ -17,15 +17,15 @@
     cd M1s_BL808_example && ln -s ../M1s_BL808_SDK ./
     ```
 
-3. Download toolchain [here](https://dl.sipeed.com/shareURL/others/toolchain) or [here](https://occ.t-head.cn/community/download?id=4073475960903634944). Extract it to `M1s_BL808_SDK/toolchain/` and rename to  `Linux_x86_64` 
+3. Download toolchain (version 2.2.4) [here](https://dl.sipeed.com/shareURL/others/toolchain) or [here](https://occ.t-head.cn/community/download?id=3996672928124047360). Extract it to `M1s_BL808_SDK/toolchain/` and rename to  `Linux_x86_64` 
 
     ```shell
     cd ~/bl808 && mkdir M1s_BL808_SDK/toolchain
     
-    mv {your_download_path}/Xuantie-900-gcc-elf-newlib-x86_64-V2.6.0-20220715.tar.gz ~/bl808
-    tar -zxvf Xuantie-900-gcc-elf-newlib-x86_64-V2.6.0-20220715.tar.gz -C M1s_BL808_SDK/toolchain/
+    mv {your_download_path}/Xuantie-900-gcc-elf-newlib-x86_64-V2.2.4-20220715.tar.gz ~/bl808
+    tar -zxvf Xuantie-900-gcc-elf-newlib-x86_64-V2.2.4-20220715.tar.gz -C M1s_BL808_SDK/toolchain/
     
-    cd M1s_BL808_SDK/toolchain && mv Xuantie-900-gcc-elf-newlib-x86_64-V2.6.0/ Linux_x86_64 && cd -
+    cd M1s_BL808_SDK/toolchain && mv Xuantie-900-gcc-elf-newlib-x86_64-V2.2.4/ Linux_x86_64 && cd -
     ```
 
 4. Build the hello_world example
@@ -34,7 +34,7 @@
     cd ~/bl808/M1s_BL808_example/c906_app/
 
     # Configure environment variables (Executed only once per working environment)
-    export BL_SDK_PATH=../M1s_BL808_SDK
+    export BL_SDK_PATH=$(pwd)/../M1s_BL808_SDK
 
     # Compile the hello_world project
     ./build.sh hello_world
