@@ -1,5 +1,8 @@
 # M1s_BL808_example
 
+[详细说明文档](https://wiki.sipeed.com/hardware/zh/maix/m1s/other/start.html)
+[Detailed document](https://wiki.sipeed.com/hardware/en/maix/m1s/other/start.html)
+
 ## Setup
 
 1. Download sdk
