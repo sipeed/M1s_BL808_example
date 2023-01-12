@@ -38,7 +38,7 @@
 
 ## CONVERT TO BLAI MODEL
 
-1. Get the `blai_toolchain`, strcture of the directory shows below(filtered):
+1. Get the [blai_toolchain](https://dl.sipeed.com/shareURL/MAIX/M1s/M1s_Dock/8_Toolchain/blai_npu), strcture of the directory shows below(filtered):
    
    ```shell
    ├── BLAI.cfg                            # configuration file
