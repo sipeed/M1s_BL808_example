@@ -15,7 +15,7 @@ void main()
     printf("Audio init..\r\n");
     uint16_t *buff = pvPortMalloc(AUDIO_BUFF_SIZE * 2);
     assert(buff);
-    m1s_xram_audio_init(buff, AUDIO_BUFF_SIZE * 2);
+    m1s_xram_audio_init(buff, AUDIO_BUFF_SIZE);
 
     uint16_t *rec_buff;
     uint32_t rec_buff_size;
